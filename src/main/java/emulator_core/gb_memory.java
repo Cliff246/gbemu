@@ -5,7 +5,6 @@ import java.security.InvalidParameterException;
 
 import org.w3c.dom.ranges.RangeException;
 
-import emulator_core.*;
 
 public class gb_memory extends Thread
 {
@@ -18,8 +17,11 @@ public class gb_memory extends Thread
         gbbus = _gbbus;
     }
 
- 
-    
+    public void snoopbus()
+    {
+
+    }
+
     public byte get_byte(int index)
     {  
         //why is there no unsigned values

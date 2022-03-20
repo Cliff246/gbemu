@@ -1,7 +1,6 @@
 package emulator_core;
 
 
-import emulator_core.*;
 
 public class gb_ppu extends Thread
 {
@@ -12,7 +11,10 @@ public class gb_ppu extends Thread
         
     }
 
-
+    public void snoopbus()
+    {
+            
+    }
    
     
 

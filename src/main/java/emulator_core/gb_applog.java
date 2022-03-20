@@ -2,7 +2,7 @@ package emulator_core;
 
 import java.util.Vector;
 
-import emulator_core.*;
+
 
 public class gb_applog {
 

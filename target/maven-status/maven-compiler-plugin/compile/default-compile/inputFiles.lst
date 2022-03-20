@@ -1,3 +1,4 @@
+C:\dev\gbemu\src\main\java\emulator_core\fileio.java
 C:\dev\gbemu\src\main\java\emulator_core\gb_errorstate.java
 C:\dev\gbemu\src\main\java\emulator_core\gb_debug.java
 C:\dev\gbemu\src\main\java\emulator_core\gb_bus.java
@@ -7,7 +8,6 @@ C:\dev\gbemu\src\main\java\emulator_core\gb_interface.java
 C:\dev\gbemu\src\main\java\emulator_core\gb_cpu.java
 C:\dev\gbemu\src\main\java\emulator_core\gb_cartridge.java
 C:\dev\gbemu\src\main\java\emulator_core\gb_ppu.java
-C:\dev\gbemu\src\main\java\emulator_core\gb_file_input.java
 C:\dev\gbemu\src\main\java\emulator_core\gb_handle.java
 C:\dev\gbemu\src\main\java\emulator_core\gb_applog.java
 C:\dev\gbemu\src\main\java\emulator_core\vertex.java

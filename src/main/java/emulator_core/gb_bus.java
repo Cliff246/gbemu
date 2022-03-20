@@ -1,7 +1,6 @@
 package emulator_core;
 
 
-import emulator_core.*;
 
 public class gb_bus extends Thread{
 
@@ -43,21 +42,40 @@ public class gb_bus extends Thread{
     }
 
     public void insert_gb_cart(gb_cartridge gb_cartridge) {
-
+        gbcart = gb_cartridge;
     }
 
     public void remove_gb_cart(gb_cartridge gb_cartridge) {
-
+        if(gb_cartridge == gbcart)
+            gbcart = null;
     }
 
     private int data;
-    
-    public int pull_off_bus(){
+    private int address;
+   
+    public int recieve_off_bus()
+    {
         return data;
     }
 
-    public void push_onto_bus(int _data){
-        data = _data;
+    public vertex<Integer> pull_off_bus(int address_start, int address_length){
+
+        if(address >= address_start && address < address_length + address_start)
+            return new vertex<Integer>(data, address);
+        else
+            return null;
+    }
+
+    public void push_onto_bus(vertex<Integer>push){
+        
+        data = push.get_at(0);
+        address = push.get_at(1);
+        
+    
+        gbcart.snoopbus();
+        gbmem.snoopbus();
+        gbppu.snoopbus();
+        gbcpu.snoopbus();
     }
     
 

@@ -2,9 +2,7 @@ package emulator_core;
 
 
 import java.security.InvalidParameterException;
-import java.util.Vector;
 
-import emulator_core.*;
 
 
 public class gb_bitfunctions {

@@ -1,11 +1,8 @@
 package emulator_core;
 
 
-import java.security.InvalidParameterException;
-import java.util.Timer;
 import java.util.Vector;
 
-import emulator_core.*;
 
 public class gb_cpu extends Thread {
     private gb_bus bus;
@@ -34,11 +31,22 @@ public class gb_cpu extends Thread {
         NoRegister
     }
 
-    private final int sbyte_max = 128, sbyte_min = -127;
-    private final int ubyte_max = 255, ubyte_min = 0;
-    private final int uword_max = 65535, uword_min = 0;
-    private final int word16_hi = 0;
-    private final int word16_lo = 1;  
+    private final int __instruction__ = 0;
+    private final int __precode__ = 1;
+    private final int __postcode__ = 2;
+    private final int __displacment__ = 3;
+    private final int __immedate__ = 4;
+    private final int __complete__ = 5;
+    private final int __instruction_precode__ = 0;
+    private final int __instruction_postcode__ = 1;
+    private final int __instruction_displace__ = 2;
+    private final int __instruction_immedate__ = 3;
+    private final int __sbyte_max__ = 128, __sbyte_min__ = -127;
+    private final int __ubyte_max__ = 255, __ubyte_min__ = 0;
+    private final int __uword_max__ = 65535, __uword_min__ = 0;
+    private final int __word16_hi__ = 0;
+    private final int __word16_lo__ = 1;  
+    private final int __ppu_address_max__ = 0xfff, __ppu_address_min__ = 0;
     private int cycles = 0;
     private int length = 0;
     private int rA, rF, rB, rC, rD, rE, rH, rL;
@@ -46,8 +54,26 @@ public class gb_cpu extends Thread {
     private boolean debug = true;
     private gb_applog applog;
 
-    Vector<vertex<Integer>> instruction_debug = new Vector<vertex<Integer>>();
+    private int stage = 0;
+    private int ndisplace = 0;
+    private int nimmedate = 0;
+    private int preop = 0, postop = 0;
+    private int videoram = 0;
+    private boolean datain;
+    private boolean dataout;
+    private boolean horsync;
+    private boolean versync;
+    private boolean datalch;
+    private boolean altsigl;
+    private boolean input0;
+    private boolean input1;
+    private boolean input2;
+    private boolean input3;
+    private boolean input4;
+    private boolean input5;
 
+
+    Vector<vertex<Integer>> instruction_debug = new Vector<vertex<Integer>>();
 
     public void setup(){
         if(debug == true)
@@ -65,7 +91,7 @@ public class gb_cpu extends Thread {
 
   
     private vertex<Integer> get_16bit(int get){
-        if(get < uword_min && get >= uword_max)
+        if(get < __uword_min__ && get >= __uword_max__)
             get &= 0xffff;
         int hi = get & 0x00ff, lo = get & 0xff;
         return new vertex<Integer>(hi, lo);  
@@ -73,8 +99,8 @@ public class gb_cpu extends Thread {
 
     private int set_16bit(vertex<Integer> set){
         Integer[] hilo = set.get_data_list();
-        int hi = hilo[word16_hi], lo = hilo[word16_lo];
-        if((hi < ubyte_min && hi >= ubyte_max) || (lo >= ubyte_min && lo < ubyte_max))
+        int hi = hilo[__word16_hi__], lo = hilo[__word16_lo__];
+        if((hi < __ubyte_min__ && hi >= __ubyte_max__) || (lo >= __ubyte_min__ && lo < __ubyte_max__))
         {
             hi &= 0x00ff;
             lo &= 0xff;
@@ -85,12 +111,12 @@ public class gb_cpu extends Thread {
 
 
     private int set_register(REGISTER reg, int value){
-        if(value < uword_min)
+        if(value < __uword_min__)
         {
             gb_errorstate.exception(thread, "virtual 8 bit value is does not fit within range", Integer.toString(value), reg.toString());
             return -1;
         }
-        else if(value > uword_max)
+        else if(value > __uword_max__)
         {
             return -1;
         }
@@ -142,42 +168,42 @@ public class gb_cpu extends Thread {
                 case StackPointer:{
                     bitsize = 16;
                     Integer[]hilo = get_16bit(value).get_data_list();
-                    spHI = hilo[word16_hi];
-                    spLO = hilo[word16_lo];
+                    spHI = hilo[__word16_hi__];
+                    spLO = hilo[__word16_lo__];
                     break;
                 }
                 case ProgramCounter:{
                     bitsize = 16;
                     Integer[]hilo = get_16bit(value).get_data_list();
-                    pcHI = hilo[word16_hi];
-                    pcLO = hilo[word16_lo];
+                    pcHI = hilo[__word16_hi__];
+                    pcLO = hilo[__word16_lo__];
                 }
                 case RegisterAF:{
                     bitsize = 16;
                     Integer[]hilo = get_16bit(value).get_data_list();
-                    rA = hilo[word16_hi];
-                    rF = hilo[word16_lo];
+                    rA = hilo[__word16_hi__];
+                    rF = hilo[__word16_lo__];
                     break;
                 }
                 case RegisterBC:{
                     bitsize = 16;
                     Integer[]hilo = get_16bit(value).get_data_list();
-                    rB = hilo[word16_hi];
-                    rC = hilo[word16_lo];
+                    rB = hilo[__word16_hi__];
+                    rC = hilo[__word16_lo__];
                     break;
                 }
                 case RegisterDE:{
                     bitsize = 16;
                     Integer[]hilo = get_16bit(value).get_data_list();
-                    rD = hilo[word16_hi];
-                    rE = hilo[word16_lo];
+                    rD = hilo[__word16_hi__];
+                    rE = hilo[__word16_lo__];
                     break;
                 }
                 case RegisterHL:{
                     bitsize = 16;
                     Integer[]hilo = get_16bit(value).get_data_list();
-                    rH = hilo[word16_hi];
-                    rL = hilo[word16_lo];
+                    rH = hilo[__word16_hi__];
+                    rL = hilo[__word16_lo__];
                     break;
                 }
                 default:{
@@ -202,27 +228,17 @@ public class gb_cpu extends Thread {
         {},
         {}
     };
-    private final int __instruction__ = 0;
-    private final int __precode__ = 1;
-    private final int __postcode__ = 2;
-    private final int __displacment__ = 3;
-    private final int __immedate__ = 4;
-    private final int __complete__ = 5;
-    private final int __instruction_precode__ = 0;
-    private final int __instruction_postcode__ = 1;
-    private final int __instruction_displace__ = 2;
-    private final int __instruction_immedate__ = 3;
+    
 
-    private int stage = 0;
-    private int ndisplace = 0;
-    private int nimmedate = 0;
-    private int preop = 0, postop = 0;
+
+
+
 
     private vertex<Integer> instruction = new vertex<Integer>(0,0,0,0);
     public void gbcpu_cycle()
     {
         final int __nprefix__ = 0xcb;
-        int data = bus.pull_off_bus();
+        int data = bus.recieve_off_bus();
 
         if(stage == __instruction__){
             preop = 0;
@@ -316,7 +332,7 @@ public class gb_cpu extends Thread {
 
             if(outbus != funnynumber)
             {
-                bus.push_onto_bus(outbus);
+                bus.push_onto_bus();
             }
         
         }   
@@ -326,6 +342,12 @@ public class gb_cpu extends Thread {
 
 
         
+        
+    }
+
+
+    public void snoopbus()
+    {
         
     }
 

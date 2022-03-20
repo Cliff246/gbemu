@@ -2,7 +2,6 @@ package emulator_core;
 
 
 import java.security.InvalidParameterException;
-import emulator_core.*;
 
 public class vertex <T> 
 {
