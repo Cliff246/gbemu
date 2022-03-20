@@ -3,7 +3,7 @@ package emulator_core;
 import java.io.File;
 import java.io.IOException;
 
-import src.app.emulator_core.*;
+import emulator_core.*;
 
 public class gb_file_input{
 

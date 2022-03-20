@@ -4,9 +4,8 @@ import org.junit.*;
 
 public class test_suite {
     
-
-    
-
+    bitfunctions_test test = new bitfunctions_test();
+    ThreadGroup
 
 
 

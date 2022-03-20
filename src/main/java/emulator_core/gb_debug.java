@@ -3,7 +3,7 @@ package emulator_core;
 import java.security.InvalidParameterException;
 import java.util.Vector;
 
-import src.app.emulator_core.*;
+import emulator_core.*;
 
 public class gb_debug {
 

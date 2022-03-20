@@ -5,7 +5,7 @@ import java.security.InvalidParameterException;
 import java.util.Timer;
 import java.util.Vector;
 
-import src.app.emulator_core.*;
+import emulator_core.*;
 
 public class gb_cpu extends Thread {
     private gb_bus bus;

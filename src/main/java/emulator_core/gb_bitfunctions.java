@@ -17,34 +17,46 @@ public class gb_bitfunctions {
     // better alternative so this is staying
  
     public static String get_byte_string(int in) {
-        char[] szc_temp = new char[32];
-        for (int i = 31; i >= 0; i--)
-            szc_temp[31 - i] = (char) (chk_bit(in, i) + '0');
-        return new String(szc_temp);
+        StringBuffer buffer = new StringBuffer();
+        for (int i = 0; i < 8; i++)
+            buffer.insert(i,(char) (chk_bit(in, i) + '0'));
+        return buffer.reverse().toString();
     }
-
     public static String get_word_string(int in) {
-        char[] szc_temp = new char[16];
-        for (int i = 15; i >= 0; i--)
-            szc_temp[15 - i] = (char) (chk_bit(in, i) + '0');
-        return new String(szc_temp);
+        StringBuffer buffer = new StringBuffer();
+        for (int i = 0; i < 16; i++)
+            buffer.insert(i,(char) (chk_bit(in, i) + '0'));
+        return buffer.reverse().toString();
+    }
+    public static int get_value_string(String in, int length){
+        int value = 0;
+        for(int i = 0, opp = in.length() - 1; i < length;i++, opp--)
+        {
+            if(i < in.length())
+            {
+                if(in.charAt(i) == '1')
+                    value = set_bit(value,opp);
+            }
+        }
+        return value;
     }
 
     public static int set_bit(int input, int index) {
         if (index < 0 || index >= 32)
             throw new InvalidParameterException("index must be between 0 and 32");
-        return (int) (input |= 1 << index);
+        return (input | (0x01 << index));
     }
+
 
     public static int clr_bit(int input, int index) {
         if (index < 0 || index >= 32)
             throw new InvalidParameterException("index must be between 0 and 32");
-        return (int) (input & ~(1 << index));
+        return (input & ~(1 << index));
     }
 
     public static int chk_bit(int input, int index) {
         if (index < 0 || index >= 32)
             throw new InvalidParameterException("index must be between 0 and 32");
-        return (int) ((input >> index) & 1);
+        return ((input >> index) & 1);
     }
 }

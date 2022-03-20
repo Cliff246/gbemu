@@ -5,7 +5,7 @@ import java.security.InvalidParameterException;
 
 import org.w3c.dom.ranges.RangeException;
 
-import src.app.emulator_core.*;
+import emulator_core.*;
 
 public class gb_memory extends Thread
 {

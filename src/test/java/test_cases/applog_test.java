@@ -5,6 +5,8 @@ import junit.framework.TestCase;
 
 import org.junit.*;
 
-public class applog_test extends TestCase  {
+public class applog_test  {
     
+
+
 }

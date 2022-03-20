@@ -1,0 +1,13 @@
+test_cases\memory_test.class
+test_cases\vertex_test.class
+test_cases\applog_test.class
+test_cases\errorstate_test.class
+test_cases\io_test.class
+test_cases\debug_test.class
+test_cases\ppu_test.class
+test_cases\bus_test.class
+test_cases\handle_test.class
+test_cases\interface_test.class
+test_cases\test_suite.class
+test_cases\bitfunctions_test.class
+test_cases\cpu_test.class
