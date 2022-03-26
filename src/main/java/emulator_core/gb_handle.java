@@ -39,7 +39,7 @@ public class gb_handle
         gbtype = _gbtype;
     }
 
-    public void create_bus_thread(String _name)
+    public void create_bus_thread(String _name) throws Exception
     {
 
         if(thread == null){
@@ -49,7 +49,7 @@ public class gb_handle
             thread.start();
         }
         else
-            gb_errorstate.exception(this.thread,"thread could not be started", _name);
+            gb_execeptions.gb_exception("could not start thread", null);
     }
 
 

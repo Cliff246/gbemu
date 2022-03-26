@@ -8,14 +8,13 @@ public class gb_cartridge extends Thread
 
     public byte[]data;   
     private fileio io;
-    public gb_cartridge(String path)
+    public gb_cartridge(String path) throws Exception
     {
         try{
             io = new fileio(path);
         }
         catch (IOException ioexc){
-            gb_errorstate.exception(currentThread(), "%s -> ioexception",ioexc.getMessage());
-            
+            throw new IOException("file could not be gathered ");            
         }
        
 

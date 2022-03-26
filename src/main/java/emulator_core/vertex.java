@@ -1,6 +1,5 @@
 package emulator_core;
 
-
 import java.security.InvalidParameterException;
 
 public class vertex <T> 
@@ -44,6 +43,7 @@ public class vertex <T>
     {
         return data.length;
     }
+
     public void clear(){
         for(int i = 0; i < data.length; i++)
             data[i] = null;

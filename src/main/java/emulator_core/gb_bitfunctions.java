@@ -39,6 +39,13 @@ public class gb_bitfunctions {
         return value;
     }
 
+    public static int cat_word(int lo,int hi){
+
+        int output = hi;
+        output <<= 8;
+        return output + lo;
+    }
+
     public static int set_bit(int input, int index) {
         if (index < 0 || index >= 32)
             throw new InvalidParameterException("index must be between 0 and 32");
@@ -56,5 +63,13 @@ public class gb_bitfunctions {
         if (index < 0 || index >= 32)
             throw new InvalidParameterException("index must be between 0 and 32");
         return ((input >> index) & 1);
+    }
+
+    public static int chk_byte(int bite){
+        return bite & 0xff;
+    }
+
+    public static int chk_word(int word){
+        return word & 0xffff;
     }
 }
