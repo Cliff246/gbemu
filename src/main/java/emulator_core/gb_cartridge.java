@@ -21,7 +21,7 @@ public class gb_cartridge extends Thread
 
     }
 
-    public void snoopbus()
+    public void snoopbus(int[]data, int address)
     {
         
     }

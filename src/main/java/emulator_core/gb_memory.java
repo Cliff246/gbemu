@@ -17,7 +17,7 @@ public class gb_memory extends Thread
         gbbus = _gbbus;
     }
 
-    public void snoopbus()
+    public void snoopbus(int[]data, int address)
     {
 
     }

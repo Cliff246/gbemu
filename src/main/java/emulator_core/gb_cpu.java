@@ -1,13 +1,14 @@
 package emulator_core;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.function.Function;
 
-import java.util.Stack;
-import java.util.Vector;
-
-
-public class gb_cpu extends Thread {
+public class gb_cpu extends Thread 
+{
     
-    public static enum REGISTER{
+    public static enum REGISTER
+    {
         Accumulator,  Flag,
         RegisterB, RegisterC,
         RegisterD, RegisterE,
@@ -19,18 +20,14 @@ public class gb_cpu extends Thread {
         ProgramCounterHI, ProgramCounterLO,
         NoRegister
     }
-    public class registers{
+    public class registers
+    {
         private int rA, rF, rB, rC, rD, rE, rH, rL;
         private int spLO, spHI, pcLO, pcHI;
 
 
-        public registers(
-            int _rA, int _rF,
-            int _rB, int _rC,
-            int _rD, int _rE,
-            int _rH, int _rL,
-            int _spLO, int _spHI,
-            int _pcLO, int _pcHI){
+        public registers(int _rA, int _rF, int _rB, int _rC, int _rD, int _rE, int _rH, int _rL, int _spLO, int _spHI, int _pcLO, int _pcHI)
+        {
                 rA = _rA;
                 rF = _rF;
                 rB = _rB;
@@ -45,14 +42,59 @@ public class gb_cpu extends Thread {
                 pcHI = _pcHI;
         }
         
-        public registers(registers copy){
-            
-            
-            
-
+        public registers(registers copy)
+        {    
+            int[]clone =  copy.get_register_ary().clone();
+            set_register_ary(clone);
         }
 
-        public void clr_registers(){
+        public registers(gb_handle.GAMEBOY_TYPE type)
+        {
+            init_registers(type);
+        }
+
+        public registers()
+        {
+            clr_registers();
+        }
+
+        public void init_registers(gb_handle.GAMEBOY_TYPE type)
+        {
+            int af = 0;
+            switch (type)
+            {
+                case GB:{
+                    af = 0x01;
+                    break;
+                }
+                case GBC:{
+                    af = 0x11;
+                    break;
+                }
+                case GBP:{
+                    af = 0xff;
+                    break;
+                }
+                case GBS:{
+                    af = 0x01;
+                    break;
+                }
+                default:{
+                    clr_registers();
+                    return;
+                }
+            }
+            set_register(REGISTER.RegisterAF, af);
+            set_register(REGISTER.Flag, 0xbd);
+            set_register(REGISTER.RegisterBC, 0x0013);
+            set_register(REGISTER.RegisterDE, 0x00d8);
+            set_register(REGISTER.RegisterHL, 0x014d);
+            set_register(REGISTER.StackPointer, 0xfffe);
+            set_register(REGISTER.ProgramCounter, 0x0100);
+        }
+        
+        public void clr_registers()
+        {
             rA = 0;
             rF = 0;
             rB = 0;
@@ -217,30 +259,44 @@ public class gb_cpu extends Thread {
         public int[] get_register_ary()
         {
             int[]out = {
-                rA, rF, rB,  rC,  rD,  rE,  rH,  rL,  spLO,  spHI,  pcLO,  pcHI\
+                rA, rF, rB,  rC,  rD,  rE,  rH,  rL,  spLO,  spHI,  pcLO,  pcHI
             };
             return out;
         }
 
     }
 
-    public interface execute{
-        public void opexe();
-    }
-    public class instruction{
-        String idisassembly;
-        int ilength;
-        execute iexe;
+    public class instruction
+    {
+        public String idisassembly;
+        public int ilength;
+        public op_functions ifunction;
+        public Method imethod;
         
-        instruction(String _idisassembly, int _ilength, execute _iexe)
+        instruction(String _idisassembly, String _fnname, int _ilength, op_functions _ifunction)
         {
             idisassembly = _idisassembly;
             ilength = _ilength;
-            iexe = _iexe;
-        }
-        
-        void executeinstruction(){
-            iexe.opexe();
+            ifunction = _ifunction;
+            try
+            {
+                imethod = ifunction.getClass().getMethod(_fnname, registers.class, int[].class);
+            }
+            catch (NoSuchMethodError | NoSuchMethodException | SecurityException el)
+            {
+                gb_execeptions.gb_exception("no such method error %s ", el.getMessage());
+            }       
+        } 
+        void executeinstruction(registers reg, int[]opperands)
+        {
+            try 
+            {
+                imethod.invoke(ifunction, reg, opperands);
+            }
+            catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException el) 
+            {
+                gb_execeptions.gb_exception("no such method error %s ", el.getMessage());
+            }          
         }
         
     }
@@ -250,45 +306,6 @@ public class gb_cpu extends Thread {
     private gb_handle.GAMEBOY_TYPE type;
     private Thread thread;
  
-   
-
-    public gb_cpu(Thread _thread, gb_handle _handle, gb_bus _gbbus) {
-        
-        thread = _thread;
-        handle = _handle;
-        bus = _gbbus;
-        type = handle.gbtype;
-
-    }
-
-   
-
-
-    private final int __sbyte_max__ = 128, __sbyte_min__ = -127;
-    private final int __ubyte_max__ = 255, __ubyte_min__ = 0;
-    private final int __uword_max__ = 65535, __uword_min__ = 0;
-    private final int __word16_hi__ = 0;
-    private final int __word16_lo__ = 1;  
-    private final int __ppu_address_max__ = 0xfff, __ppu_address_min__ = 0;
-
-
-    private boolean debug = true;
-    private gb_applog applog;
-
-    Vector<vertex<Integer>> instruction_debug = new Vector<vertex<Integer>>();
-
-
-
-
-    public void setup(){
-        if(debug == true)
-            applog = new gb_applog("cpu debug");
-    }
-
-
-
-
-  
     private vertex<Integer> get_16bit(int get){
         if(get < __uword_min__ && get >= __uword_max__)
             get &= 0xffff;
@@ -307,17 +324,83 @@ public class gb_cpu extends Thread {
         int result = (hi << 8);
         return result + lo;
     }
+    
+    private gb_applog applog;
+    private boolean debug;
+    private op_functions functions = new op_functions();
+
+    public gb_cpu(Thread _thread, gb_handle _handle, gb_bus _gbbus, gb_applog _applog) 
+    {
+        
+        thread = _thread;
+        handle = _handle;
+        bus = _gbbus;
+        type = handle.gbtype;
+        if(applog == null)
+            debug = false;
+        else
+        {
+            applog = _applog;
+            debug = true;
+        }
+
+    }
 
 
-   
+
+
+
+    public final int __sbyte_max__ = 128, __sbyte_min__ = -127;
+    public final int __ubyte_max__ = 255, __ubyte_min__ = 0;
+    public final int __uword_max__ = 65535, __uword_min__ = 0;
+    public final int __word16_hi__ = 0;
+    public final int __word16_lo__ = 1;  
+    public final int __ppu_address_max__ = 0xfff, __ppu_address_min__ = 0;
+
+
+    instruction[][] operations = {
+        {
+            new instruction("NOP", "__NOP", 0, functions),
+            new instruction("STOP 0", "__STOP_0", 1, functions),
+        },
+        {
+        
+        }
+    };
 
     
 
 
 
 
-
   
+    
+
+
+   
+
+    
+
+    public boolean update;
+    public void gbcpu_update()
+    {
+        
+        while(update == true)
+        {
+
+        }
+
+
+    }
+    public void gbcpu_setup()
+    {
+        if(debug == true)
+            applog = new gb_applog("cpu debug");
+
+    }
+  
+    
+
     public void gbcpu_cycle()
     {
         
@@ -325,11 +408,26 @@ public class gb_cpu extends Thread {
     }
 
 
-    public void snoopbus()
+    public void snoopbus(int[]data)
     {
         
     }
 
-    
-  
+    public class op_functions
+    {
+        public void NOP(registers reg, int[] opperands)
+        {
+
+        }
+
+        public void STOP_0(registers reg, int[] opperands)
+        {
+            update = false;
+        }
+
+    }
+
+
+
+   
 }

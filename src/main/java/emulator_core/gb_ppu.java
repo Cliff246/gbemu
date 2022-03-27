@@ -11,7 +11,7 @@ public class gb_ppu extends Thread
         
     }
 
-    public void snoopbus()
+    public void snoopbus(int[]data, int address)
     {
             
     }
