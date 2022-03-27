@@ -25,6 +25,14 @@ public class gb_applog {
             throw new NullPointerException("there are no more elements in the log");
     }
 
+    public boolean chk_log()
+    {
+        if(applog.size() >= 1)
+            return true;
+        else 
+            return false;
+    }
+
     public void clear_log() {
         applog.clear();
     }

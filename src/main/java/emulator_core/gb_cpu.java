@@ -2,9 +2,12 @@ package emulator_core;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.sql.Time;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.function.Function;
 
-public class gb_cpu extends Thread 
+public class gb_cpu extends Thread
 {
     
     public static enum REGISTER
@@ -295,7 +298,8 @@ public class gb_cpu extends Thread
             }
             catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException el) 
             {
-                gb_execeptions.gb_exception("no such method error %s ", el.getMessage());
+                gb_execeptions.gb_putlog("instruction method not found %s | disassembly: %s", imethod.getName(), idisassembly);
+                gb_execeptions.gb_exception("no such method error: %s ", el.getMessage());
             }          
         }
         
@@ -304,6 +308,8 @@ public class gb_cpu extends Thread
     private gb_bus bus;
     private gb_handle handle;
     private gb_handle.GAMEBOY_TYPE type;
+    private registers cpureg;
+    private cpu_logic cpulogic;
     private Thread thread;
  
     private vertex<Integer> get_16bit(int get){
@@ -343,7 +349,9 @@ public class gb_cpu extends Thread
             applog = _applog;
             debug = true;
         }
-
+        cpureg = new registers(type);
+        cpulogic = new cpu_logic();
+        scheduler = cpulogic;
     }
 
 
@@ -371,44 +379,54 @@ public class gb_cpu extends Thread
     
 
 
-
-
-  
-    
-
-
-   
-
-    
-
-    public boolean update;
-    public void gbcpu_update()
-    {
-        
-        while(update == true)
-        {
-
-        }
-
-
-    }
     public void gbcpu_setup()
     {
         if(debug == true)
             applog = new gb_applog("cpu debug");
 
     }
+
   
     
 
-    public void gbcpu_cycle()
-    {
-        
 
+    public boolean update;
+    public TimerTask scheduler;
+    public long duration;
+    int[]opperands = null;
+    public void update()
+    {
+        Timer timer = new Timer();
+        
+        duration = (handle.gbtype == gb_handle.GAMEBOY_TYPE.GBC)? gb_handle.gbc_hzclock : gb_handle.gb_hzclock;
+        if(scheduler == null)
+            scheduler = cpulogic;
+        
+        while(update == true)
+        {
+
+            timer.schedule(scheduler, duration);
+
+        }
     }
 
-
     public void snoopbus(int[]data)
+    {
+        opperands = data;
+    }
+    class cpu_logic extends TimerTask
+    {
+        public void run()
+        {
+            int opcode = 0;
+            int prefix = 0;
+            instruction current = operations[prefix][opcode];
+            current.executeinstruction(cpureg, opperands);
+
+        }
+     
+    }
+    public void cpu_clock(int duration)
     {
         
     }
@@ -417,14 +435,17 @@ public class gb_cpu extends Thread
     {
         public void NOP(registers reg, int[] opperands)
         {
-
+            return;
         }
 
         public void STOP_0(registers reg, int[] opperands)
         {
             update = false;
         }
+        public void JR_NZ_r8(registers reg, int[]opperands)
+        {
 
+        }
     }
 
 

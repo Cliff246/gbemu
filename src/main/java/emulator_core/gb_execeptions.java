@@ -4,6 +4,10 @@ public class gb_execeptions {
     public static void  gb_exception(String fmt, Object ... args) throws RuntimeException
     {
         String output = String.format(fmt, args);
+        applog.push_log(output);
+        while(applog.chk_log() == true)
+            System.err.println(applog.pop_log());
+
         throw new RuntimeException(output);
     }
 
