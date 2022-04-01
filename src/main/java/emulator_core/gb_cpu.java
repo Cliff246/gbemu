@@ -2,10 +2,7 @@ package emulator_core;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.sql.Time;
-import java.util.Timer;
 import java.util.TimerTask;
-import java.util.function.Function;
 
 public class gb_cpu extends Thread
 {
@@ -157,7 +154,7 @@ public class gb_cpu extends Thread
         }
 
         public void set_register(REGISTER op, int value){
-            if(value < __uword_min__ || value > __uword_max__)
+            if(value < gb_bitfunctions.__u_word_min__ || value > gb_bitfunctions.__u_word_max__)
                 return;
             
                
@@ -312,7 +309,7 @@ public class gb_cpu extends Thread
     private Thread thread;
  
     private vertex<Integer> get_16bit(int get){
-        if(get < __uword_min__ && get >= __uword_max__)
+        if(get < gb_bitfunctions.__u_word_min__ && get >= gb_bitfunctions.__u_word_max__)
             get &= 0xffff;
         int hi = get & 0x00ff, lo = get & 0xff;
         return new vertex<Integer>(hi, lo);  
@@ -321,7 +318,7 @@ public class gb_cpu extends Thread
     private int set_16bit(vertex<Integer> set){
         Integer[] hilo = set.get_data_list();
         int hi = hilo[__word16_hi__], lo = hilo[__word16_lo__];
-        if((hi < __ubyte_min__ && hi >= __ubyte_max__) || (lo >= __ubyte_min__ && lo < __ubyte_max__))
+        if((hi < gb_bitfunctions.__u_byte_min__ && hi >= gb_bitfunctions.__u_byte_max__) || (lo >= gb_bitfunctions.__u_byte_min__ && lo < gb_bitfunctions.__u_byte_max__))
         {
             hi &= 0x00ff;
             lo &= 0xff;
@@ -352,9 +349,7 @@ public class gb_cpu extends Thread
     }
 
 
-    public final int __sbyte_max__ = 128, __sbyte_min__ = -127;
-    public final int __ubyte_max__ = 255, __ubyte_min__ = 0;
-    public final int __uword_max__ = 65535, __uword_min__ = 0;
+   
     public final int __word16_hi__ = 0;
     public final int __word16_lo__ = 1;  
     public final int __ppu_address_max__ = 0xfff, __ppu_address_min__ = 0;
@@ -379,7 +374,7 @@ public class gb_cpu extends Thread
 
     public void run()
     {
-        duration = (handle.gbtype == gb_handle.GAMEBOY_TYPE.GBC)? gb_handle.gbc_hzclock / 60: gb_handle.gb_hzclock / 60;
+        duration = (handle.gbtype == gb_handle.GAMEBOY_TYPE.GBC)? gb_handle.__gbc_hzclock__ / 60: gb_handle.__gb_hzclock__ / 60;
         while(update == true)
         {
             int opcode = 0, prefix = 0;
@@ -408,6 +403,8 @@ public class gb_cpu extends Thread
 
         private void onecycle()
         {
+
+
             try {
                 sleep(duration);
             } catch (InterruptedException e) {
@@ -417,10 +414,23 @@ public class gb_cpu extends Thread
 
  
       
-        public void __NOP(registers reg, int[]opperands){}
+        public void __NOP(registers reg, int[]opperands)
+        {
+
+            onecycle();
+            return;
+        }
         
-        public void __LD_BC_A(registers reg, int[]opperands){}
-        public void __INC_BC(registers reg, int[]opperands){}
+        public void __LD_BC_A(registers reg, int[]opperands)
+        {
+            return;
+        }
+
+        public void __INC_BC(registers reg, int[]opperands)
+        {
+            return;
+        }
+
         public void __LD_BC_d16(registers reg, int[]opperands){}
         public void __DEC_B(registers reg, int[]opperands){}
         public void __INC_B(registers reg, int[]opperands){}
@@ -434,7 +444,15 @@ public class gb_cpu extends Thread
         public void __INC_C(registers reg, int[]opperands){}
         public void __LD_C_d8(registers reg, int[]opperands){}
         public void __LD_DE_d16(registers reg, int[]opperands){}
-        public void __STOP(registers reg, int[]opperands){}
+        
+        public void __STOP(registers reg, int[]opperands)
+        {
+            update = false;
+
+            onecycle();
+            return;
+        }
+
         public void __INC_DE(registers reg, int[]opperands){}
         public void __LD__DE__A(registers reg, int[]opperands){}
         public void __DEC_D(registers reg, int[]opperands){}

@@ -14,6 +14,14 @@ public class gb_bitfunctions {
     // this could easly be optimised out by the compiler and I cannot figure out a
     // better alternative so this is staying
  
+    public static final int __s_byte_max__ = 127, __s_byte_min__ = -128;
+    public static final int __u_byte_max__ = 255, __u_byte_min__ = 0;
+    public static final int __u_word_max__ = 65535, __u_word_min__ = 0;
+    public static final int __s_word_max__ = 32767, __s_word_min__ = -32768;
+
+
+
+
     public static String get_byte_string(int in) {
         StringBuffer buffer = new StringBuffer();
         for (int i = 0; i < 8; i++)

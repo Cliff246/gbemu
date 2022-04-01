@@ -2,9 +2,7 @@ package test_cases;
 import emulator_core.*;
 import junit.framework.TestCase;
 
-import static org.junit.Assert.assertArrayEquals;
 
-import java.util.function.Function;
 
 import org.junit.*;
 

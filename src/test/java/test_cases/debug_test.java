@@ -5,4 +5,9 @@ import org.junit.*;
 
 public class debug_test {
     
+    @Test public void debugcreationtest()
+    {
+        
+    }
+
 }

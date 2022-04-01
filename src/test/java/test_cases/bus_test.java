@@ -5,4 +5,9 @@ import org.junit.*;
 
 public class bus_test{
 
+    @Test public void testbuscreation()
+    {
+        
+    }
+
 }

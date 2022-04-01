@@ -20,8 +20,8 @@ public class gb_handle
     }
 
     public static final int
-        gb_hzclock = 1050000,
-        gbc_hzclock = 1050000 * 2;
+        __gb_hzclock__ = 1050000,
+        __gbc_hzclock__ = 1050000 * 2;
     
 
     
@@ -71,7 +71,7 @@ public class gb_handle
             thread.start();
         }
         else
-            gb_execeptions.gb_exception("could not start thread", null);
+            gb_execeptions.gb_exception("could not start thread", "");
     }
 
 

@@ -23,11 +23,11 @@ public class gb_debug {
     }
 
     public final byte[] debug_memrange(gb_memory gbmem, int start, int end) {
-        return gbmem.get_byterange(start, end);
+        return gbmem.__get_byterange(start, end);
     }
 
     public final byte debug_memindex(gb_memory gbmem, int index) {
-        return gbmem.get_byte(index);
+        return gbmem.__get_byte(index);
     }
 
 }

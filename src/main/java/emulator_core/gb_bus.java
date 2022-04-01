@@ -22,11 +22,28 @@ public class gb_bus extends Thread{
     public void start()
     {    
         thread = currentThread();
-        gbcpu = new gb_cpu(thread, handle, this, null);
-        gbppu = new gb_ppu(thread,handle, this);
-        gbmem = new gb_memory(thread,handle, this);
-        gbio = new gb_sysio(thread,handle, this);
+        {
+            gbcpu = new gb_cpu(thread, handle, this, null);
 
+        }
+
+        {
+            gbppu = new gb_ppu(thread,handle, this);
+
+        }
+
+
+        {
+            vertex<Integer> ramrange = new vertex<Integer>(0xc000, 0xe000);
+
+
+            gbmem = new gb_memory(thread,handle, this, ramrange);
+        }
+        
+        {
+
+            gbio = new gb_sysio(thread,handle, this);
+        }
 
         gbcpu.start();
         gbcart.run();
@@ -60,7 +77,7 @@ public class gb_bus extends Thread{
 
     public void bus_send(int address, int[]data)
     {
-        if(address <= gbcpu.__uword_max__ || address >= gbcpu.__uword_min__)
+        if(address <= gb_bitfunctions.__u_word_max__ || address >= gb_bitfunctions.__u_word_min__)
         {
             int copy = address;
             address = gb_bitfunctions.chk_word(address);
