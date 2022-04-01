@@ -12,7 +12,7 @@ public class gb_memory extends Thread
     public final int memlength = 2000;
     private byte [] m_memory;
 
-    public gb_memory(gb_handle _handler, gb_bus _gbbus) 
+    public gb_memory(Thread _thread, gb_handle _handler, gb_bus _gbbus) 
     {
         gbbus = _gbbus;
     }

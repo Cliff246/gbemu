@@ -14,6 +14,11 @@ public class gb_handle
         GB, GBP, GBC, GBS
     }
 
+    public static enum HANDLE_TYPE
+    {
+        DEBUG, RELEASE
+    }
+
     public static final int
         gb_hzclock = 1050000,
         gbc_hzclock = 1050000 * 2;
@@ -23,20 +28,37 @@ public class gb_handle
     public Thread thread;
     public String name; 
     public GAMEBOY_TYPE gbtype;
-    
+    public HANDLE_TYPE handletype;    
     public void handler_reset()
     {
 
     }
 
+
+
+
     public gb_handle(GAMEBOY_TYPE _gbtype)
     {
+        handletype = HANDLE_TYPE.RELEASE;
         gbtype = _gbtype;
     }
 
     public gb_handle(gb_cartridge cartridge, GAMEBOY_TYPE _gbtype)
     {
+        handletype = HANDLE_TYPE.RELEASE;
         gbtype = _gbtype;
+    }
+
+    public gb_handle(HANDLE_TYPE type)
+    {
+        gbtype = GAMEBOY_TYPE.GB;
+        handletype = HANDLE_TYPE.DEBUG;
+        try {
+            create_bus_thread("cputhread");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
     public void create_bus_thread(String _name) throws Exception

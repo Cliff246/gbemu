@@ -4,16 +4,17 @@ package emulator_core;
 
 public class gb_bus extends Thread{
 
-    private gb_cpu gbcpu;
-    private gb_cartridge gbcart;
-    private gb_ppu gbppu;
-    private gb_memory gbmem;
-    private gb_sysio gbio;
-    private gb_handle handle;
-    private Thread thread;
-    private String name;
+    public gb_cpu gbcpu;
+    public gb_cartridge gbcart;
+    public gb_ppu gbppu;
+    public gb_memory gbmem;
+    public gb_sysio gbio;
+    public gb_handle handle;
+    public Thread thread;
+    public String name;
 
-    public gb_bus(String _name, gb_handle _handle){
+    public gb_bus(String _name, gb_handle _handle)
+    {
         name = _name;
         handle = _handle;
     }
@@ -22,9 +23,13 @@ public class gb_bus extends Thread{
     {    
         thread = currentThread();
         gbcpu = new gb_cpu(thread, handle, this, null);
-        gbppu = new gb_ppu(handle, this);
-        gbmem = new gb_memory(handle, this);
-        gbio = new gb_sysio(handle, this);
+        gbppu = new gb_ppu(thread,handle, this);
+        gbmem = new gb_memory(thread,handle, this);
+        gbio = new gb_sysio(thread,handle, this);
+
+
+        gbcpu.start();
+        gbcart.run();
     }
 
     public void run()

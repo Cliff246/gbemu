@@ -309,7 +309,6 @@ public class gb_cpu extends Thread
     private gb_handle handle;
     private gb_handle.GAMEBOY_TYPE type;
     private registers cpureg;
-    private cpu_logic cpulogic;
     private Thread thread;
  
     private vertex<Integer> get_16bit(int get){
@@ -350,12 +349,7 @@ public class gb_cpu extends Thread
             debug = true;
         }
         cpureg = new registers(type);
-        cpulogic = new cpu_logic();
-        scheduler = cpulogic;
     }
-
-
-
 
 
     public final int __sbyte_max__ = 128, __sbyte_min__ = -127;
@@ -364,6 +358,37 @@ public class gb_cpu extends Thread
     public final int __word16_hi__ = 0;
     public final int __word16_lo__ = 1;  
     public final int __ppu_address_max__ = 0xfff, __ppu_address_min__ = 0;
+
+
+    public void snoopbus(int[]data)
+    {
+        opperands = data;
+    }
+
+    public boolean update = true;
+    public TimerTask scheduler;
+    public long duration;
+    int[]opperands = null;
+    
+    public void start()
+    {   
+        if(debug == true)
+            applog = new gb_applog("cpu debug");
+        run();
+    }
+
+    public void run()
+    {
+        
+        duration = (handle.gbtype == gb_handle.GAMEBOY_TYPE.GBC)? gb_handle.gbc_hzclock / 60: gb_handle.gb_hzclock / 60;
+        
+        while(update == true)
+        {
+            int opcode = 0, prefix = 0;
+            instruction instruction = operations[prefix][opcode]; 
+            instruction.executeinstruction(cpureg, opperands);   
+        }
+    }
 
 
     instruction[][] operations = {
@@ -376,70 +401,33 @@ public class gb_cpu extends Thread
         }
     };
 
-    
 
 
-    public void gbcpu_setup()
-    {
-        if(debug == true)
-            applog = new gb_applog("cpu debug");
 
-    }
-
-  
-    
-
-
-    public boolean update;
-    public TimerTask scheduler;
-    public long duration;
-    int[]opperands = null;
-    public void update()
-    {
-        Timer timer = new Timer();
-        
-        duration = (handle.gbtype == gb_handle.GAMEBOY_TYPE.GBC)? gb_handle.gbc_hzclock : gb_handle.gb_hzclock;
-        if(scheduler == null)
-            scheduler = cpulogic;
-        
-        while(update == true)
-        {
-
-            timer.schedule(scheduler, duration);
-
-        }
-    }
-
-    public void snoopbus(int[]data)
-    {
-        opperands = data;
-    }
-    class cpu_logic extends TimerTask
-    {
-        public void run()
-        {
-            int opcode = 0;
-            int prefix = 0;
-            instruction current = operations[prefix][opcode];
-            current.executeinstruction(cpureg, opperands);
-
-        }
-     
-    }
-    public void cpu_clock(int duration)
-    {
-        
-    }
 
     public class op_functions
     {
-        public void NOP(registers reg, int[] opperands)
+
+        private void onecycle()
         {
+            try {
+                sleep(duration);
+            } catch (InterruptedException e) {
+                gb_execeptions.gb_exception(e.getMessage());
+            }
+        } 
+
+        public void __NOP(registers reg, int[] opperands)
+        {
+            onecycle();
             return;
         }
 
-        public void STOP_0(registers reg, int[] opperands)
+        public void __STOP_0(registers reg, int[] opperands)
         {
+            onecycle();
+
+            onecycle();
             update = false;
         }
         public void JR_NZ_r8(registers reg, int[]opperands)

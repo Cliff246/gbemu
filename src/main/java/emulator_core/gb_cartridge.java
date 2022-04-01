@@ -8,7 +8,7 @@ public class gb_cartridge extends Thread
 
     public byte[]data;   
     private fileio io;
-    public gb_cartridge(String path) throws Exception
+    public gb_cartridge(Thread _thread, String path) throws Exception
     {
         try{
             io = new fileio(path);
