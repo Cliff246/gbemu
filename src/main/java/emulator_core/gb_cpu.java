@@ -4,6 +4,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.TimerTask;
 import java.util.Vector;
+import java.util.function.Function;
+
+import org.javatuples.Pair;
 
 public class gb_cpu extends Thread {
 
@@ -343,127 +346,127 @@ public class gb_cpu extends Thread {
                         break;
                     }
                     case 0x11: {
-
+                        functions.__LD_DE_d16(reg, opperands);
                         break;
                     }
                     case 0x12: {
-
+                        functions.__LD__DE__A(reg, opperands);
                         break;
                     }
                     case 0x13: {
-
+                        functions.__INC_DE(reg, opperands);
                         break;
                     }
                     case 0x14: {
-
+                        functions.__INC_D(reg, opperands);
                         break;
                     }
                     case 0x15: {
-
+                        functions.__DEC_D(reg, opperands);
                         break;
                     }
                     case 0x16: {
-
+                        functions.__LD_D_d8(reg, opperands);
                         break;
                     }
                     case 0x17: {
-
+                        functions.__RLA(reg, opperands);
                         break;
                     }
                     case 0x18: {
-
+                        functions.__JR_r8(reg, opperands);
                         break;
                     }
                     case 0x19: {
-
+                        functions.__ADD_HL_DE(reg, opperands);
                         break;
                     }
                     case 0x1a: {
-
+                        functions.__LD_A__DE__(reg, opperands);
                         break;
                     }
                     case 0x1b: {
-
+                        functions.__DEC_DE(reg, opperands);
                         break;
                     }
                     case 0x1c: {
-
+                        functions.__INC_E(reg, opperands);
                         break;
                     }
                     case 0x1d: {
-
+                        functions.__DEC_E(reg, opperands);
                         break;
                     }
                     case 0x1e: {
-
+                        functions.__LD_E_d8(reg, opperands);
                         break;
                     }
                     case 0x1f: {
-
+                        functions.__RRA(reg, opperands);
                         break;
                     }
                     case 0x20: {
-
+                        functions.__JR_NZ_r8(reg, opperands);
                         break;
                     }
                     case 0x21: {
-
+                        functions.__LD_HL_d16(reg, opperands);
                         break;
                     }
                     case 0x22: {
-
+                        functions.__LD_H_A(reg, opperands);
                         break;
                     }
                     case 0x23: {
-
+                        functions.__INC_HL(reg, opperands);
                         break;
                     }
                     case 0x24: {
-
+                        functions.__INC_H(reg, opperands);
                         break;
                     }
                     case 0x25: {
-
+                        functions.__DEC_H(reg, opperands);
                         break;
                     }
                     case 0x26: {
-
+                        functions.__LD_H_d8(reg, opperands);
                         break;
                     }
                     case 0x27: {
-
+                        functions.__DAA(reg, opperands);
                         break;
                     }
                     case 0x28: {
-
+                        functions.__JR_Z_r8(reg, opperands);
                         break;
                     }
                     case 0x29: {
-
+                        functions.__ADD_HL_HL(reg, opperands);
                         break;
                     }
                     case 0x2a: {
-
+                        functions.__LD_A__HLI__(reg, opperands);
                         break;
                     }
                     case 0x2b: {
-
-                        break;
+                        functions.__DEC_HL(reg, opperands);
+                        break; 
                     }
                     case 0x2c: {
-
+                        functions.__INC_L(reg, opperands);
                         break;
                     }
                     case 0x2d: {
-
+                        functions.__DEC_L(reg, opperands);
                         break;
                     }
                     case 0x2e: {
-
+                        functions.__LD_L_d8(reg, opperands);
                         break;
                     }
                     case 0x2f: {
-
+                        functions.__CPL(reg, opperands);
                         break;
                     }
                     case 0x30: {
@@ -1292,6 +1295,10 @@ public class gb_cpu extends Thread {
                     }
                     case 0xfe: {
 
+                        break;
+                    }
+                    default:{
+                        gb_execeptions.gb_exception("0x%x notdefined",opcode);
                         break;
                     }
                 }
@@ -2318,6 +2325,10 @@ public class gb_cpu extends Thread {
 
                         break;
                     }
+                    default:{
+                        gb_execeptions.gb_exception("0x%x notdefined",opcode);
+                        break;
+                    }
                 }
             }
 
@@ -2384,7 +2395,7 @@ public class gb_cpu extends Thread {
     public boolean update = true;
     public TimerTask scheduler;
     public long duration;
-    public Vector<vertex<Integer>> opcodelist;
+    public Vector<Pair<Integer,Integer>> opcodelist;
     int[] opperands = null;
 
     public void start() {
@@ -2401,9 +2412,9 @@ public class gb_cpu extends Thread {
             int opcode = 0, prefix = 0;
 
             if (definedinstructions == true) {
-                vertex<Integer> temp = opcodelist.get(count++);
-                prefix = temp.get_at(0);
-                opcode = temp.get_at(1);
+                Pair<Integer,Integer> temp = opcodelist.get(count++);
+                prefix = temp.getValue0();
+                opcode = temp.getValue1();
 
             } else if (definedinstructions == false) {
 

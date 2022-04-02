@@ -3,6 +3,7 @@ import emulator_core.*;
 
 import java.util.Vector;
 
+import org.javatuples.Pair;
 import org.junit.*;
 
 public class cpu_test {
@@ -27,21 +28,21 @@ public class cpu_test {
         
     }
 
-    @SuppressWarnings(value = "unchecked") @Test public void cpu_instructiontest()
+    @Test public void cpu_instructiontest()
     {
         boolean[]flags = new boolean[]{true,true};
         gb_handle handle = new gb_handle(gb_handle.HANDLE_TYPE.DEBUG);
         gb_bus bus = new gb_bus("cputest", handle, flags);
         gb_cpu cpu = bus.gbcpu;
         
-        Vector<vertex<Integer>> vertexs = new Vector<>(10);
-        for(int i = 0; i < vertexs.size();i++)
+        Vector<Pair<Integer, Integer>>opcodelist = new Vector<Pair<Integer,Integer>>();
+        for(int i = 0; i < opcodelist.size();i++)
         {
-            vertex<Integer> temp = new vertex<Integer>((int)0,i);
-            vertexs.addElement(temp);
+            Pair<Integer, Integer> temp = new Pair<Integer,Integer>(0, i);
+            opcodelist.addElement(temp);
         }
-        cpu.opcodelist = vertexs;
-
+        cpu.opcodelist = opcodelist;
+        
 
     }
 
