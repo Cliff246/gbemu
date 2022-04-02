@@ -28,14 +28,16 @@ public class cpu_test {
         
     }
 
-    @Test public void cpu_instructiontest()
+    @Test public void cpu_instructiontest() throws Exception
     {
         boolean[]flags = new boolean[]{true,true};
         gb_handle handle = new gb_handle(gb_handle.HANDLE_TYPE.DEBUG);
-        gb_bus bus = new gb_bus("cputest", handle, flags);
+        handle.create_bus_thread("test",flags);
+        gb_bus bus = handle.gbbus;
+        bus.start();
         gb_cpu cpu = bus.gbcpu;
         
-        Vector<Pair<Integer, Integer>>opcodelist = new Vector<Pair<Integer,Integer>>();
+        Vector<Pair<Integer, Integer>>opcodelist = new Vector<Pair<Integer,Integer>>(0x20);
         for(int i = 0; i < opcodelist.size();i++)
         {
             Pair<Integer, Integer> temp = new Pair<Integer,Integer>(0, i);
