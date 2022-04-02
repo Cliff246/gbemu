@@ -1,51 +1,53 @@
 package emulator_core;
 
 import java.security.InvalidParameterException;
+import java.util.Vector;
 
-public class vertex <T> 
-{
+public class vertex<T extends Object> {
     private int length;
-    private T[] data;
+    private Vector<T> data;
 
-    public vertex ()
-    {
+    public vertex() {
         throw new InvalidParameterException("args must be a valid array");
     }
 
-    @SafeVarargs vertex (T ... args)
-    {
-        data = args;
-        length = args.length;                   
+    public vertex(int size) {
+        data = new Vector<T>(size);
     }
 
-    public void set_at(T _data, int index)
-    {
-        if(index >= length || index < 0)
+    @SafeVarargs
+    public vertex(T... args) {
+        for (int i = 0; i < args.length; i++)
+            data.add(args[i]);
+        length = args.length;
+    }
+
+    public void set_at(T _data, int index) {
+        if (index >= length || index < 0)
             throw new NullPointerException("array out of range");
         else
-            data[index] = _data;
+            data.set(index, _data);
     }
 
-    public T get_at(int index)
-    {
-        if(index >= length || index < 0)
-            return data[0];
+    public T get_at(int index) {
+
+        if (index >= length || index < 0)
+            return data.get(index);
         else
-            return data[index];
-    } 
-
-    public T[] get_data_list()
-    {
-        return data;
+            return data.get(index);
     }
 
-    public int get_length()
-    {
-        return data.length;
+    @SuppressWarnings(value = "unchecked")
+    public T[] get_data_list() {
+
+        return (T[]) data.toArray();
     }
 
-    public void clear(){
-        for(int i = 0; i < data.length; i++)
-            data[i] = null;
+    public int get_length() {
+        return data.size();
+    }
+
+    public void clear() {
+        data.clear();
     }
 }

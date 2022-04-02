@@ -2,8 +2,6 @@ package emulator_core;
 
 import java.util.Vector;
 
-
-
 public class gb_applog {
 
     private Vector<String> applog = new Vector<String>();
@@ -25,11 +23,10 @@ public class gb_applog {
             throw new NullPointerException("there are no more elements in the log");
     }
 
-    public boolean chk_log()
-    {
-        if(applog.size() >= 1)
+    public boolean chk_log() {
+        if (applog.size() >= 1)
             return true;
-        else 
+        else
             return false;
     }
 

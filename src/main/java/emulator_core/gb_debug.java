@@ -2,7 +2,6 @@ package emulator_core;
 
 import java.security.InvalidParameterException;
 
-
 public class gb_debug {
 
     static int[] sz_toks(String in, char[] look) {
