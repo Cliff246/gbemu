@@ -7,7 +7,6 @@ import java.io.IOException;
 
 import java.util.Scanner;
 import java.util.Vector;
-import emulator_core.*;
 
 public class fileio {
 
@@ -41,6 +40,11 @@ public class fileio {
             myaccess = _myaccess;
         } else
             throw new IOException("myfile could not be read");
+    }
+
+    public fileio() throws Exception{
+        
+        throw new Exception("no path");
     }
 
     public int writefile(byte[][] output, int[] offset) throws IOException {

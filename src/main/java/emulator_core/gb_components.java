@@ -1,6 +1,6 @@
 package emulator_core;
 
-public class gb_components extends Thread {
+public class gb_components {
 
     protected gb_cpu cpu;
     protected gb_bus bus;
@@ -11,44 +11,25 @@ public class gb_components extends Thread {
     protected boolean[] flags;
     protected gb_handle.GAMEBOY_TYPE version;
     protected gb_handle.HANDLE_TYPE htype;
-    protected static gb_execeptions excpt;
 
-    public void run() {
-
-    }
-
-    public void threadlog()
+    public gb_components()
     {
-        Thread ref = currentThread();
-        if(ref != null)
-        {
-            String threadname = ref.getName();
-            long id = ref.getId();
-            boolean alive = ref.isAlive();
-            boolean daemon = ref.isDaemon();
-            int priority = ref.getPriority();
-
-            excpt.gb_putlog("thread name -> %s", threadname);
-            excpt.gb_putlog("thread id -> %d", id);
-            excpt.gb_putlog("thread is alive -> %s", Boolean.toString(alive));
-            excpt.gb_putlog("thread is daemon -> %s", Boolean.toString(daemon));
-            excpt.gb_putlog("thread priority -> %d", priority);
-            
-        }
-        
-        
+        gb_execeptions.gb_putlog("new component");
     }
 
-    public void delay(long milisec, int nanosec) {
-        
-        try {
-            sleep(milisec, nanosec);
-        } catch (InterruptedException ex) {
-            gb_execeptions.gb_putlog("delay failed");
-            ex.printStackTrace();
-        }
-    }
+    public void initsystem(boolean[] flags, gb_handle.GAMEBOY_TYPE version, gb_handle.HANDLE_TYPE htype)
+    {
 
+        setflags(flags);
+        setversion(version);
+        sethtype(htype);
+        setbus(new gb_bus());
+        setcartridge(new gb_cartridge());
+        setcpu(new gb_cpu());
+        setppu(new gb_ppu());
+        setmemory(new gb_memory());
+        setsysio(new gb_sysio());
+    }
 
 
     public void setversion(gb_handle.GAMEBOY_TYPE set) {
@@ -107,9 +88,10 @@ public class gb_components extends Thread {
         return ppu;
     }
 
-    public gb_handle.GAMEBOY_TYPE setversion() {
+    public gb_handle.GAMEBOY_TYPE getversion() {
         return version;
     }
+
 
     public gb_handle.HANDLE_TYPE gethtype() {
         return htype;

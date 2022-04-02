@@ -1,10 +1,9 @@
 package emulator_core;
 
 import java.util.Vector;
-
 import org.javatuples.Pair;
 
-public class gb_cpu extends gb_components{
+public class gb_cpu extends gb_components {
 
     public static enum REGISTER {
         Accumulator, Flag,
@@ -189,7 +188,7 @@ public class gb_cpu extends gb_components{
                 case ProgramCounter: {
                     Pair<Integer, Integer> hilo = get_16bit(value);
                     pcHI = hilo.getValue1();
-                    pcLO =  hilo.getValue0();
+                    pcLO = hilo.getValue0();
                     break;
                 }
                 case RegisterAF: {
@@ -207,13 +206,13 @@ public class gb_cpu extends gb_components{
                 case RegisterDE: {
                     Pair<Integer, Integer> hilo = get_16bit(value);
                     rD = hilo.getValue1();
-                    rE =  hilo.getValue0();
+                    rE = hilo.getValue0();
                     break;
                 }
                 case RegisterHL: {
                     Pair<Integer, Integer> hilo = get_16bit(value);
                     rH = hilo.getValue1();
-                    rL =  hilo.getValue0();
+                    rL = hilo.getValue0();
                     break;
                 }
                 default:
@@ -247,6 +246,14 @@ public class gb_cpu extends gb_components{
             return out;
         }
 
+        public String[] get_register_strings(){
+            String[] out = {
+                "Accumulator","Flag","RegisterB","RegisterC","RegisterD","RegisterE","RegisterH","RegisterL",
+                "StackPointerLO","StackPointerHI","ProgramCounterLO","ProgramCounterHI",
+            };
+            return out;
+        }
+    
     }
 
     public class instruction {
@@ -269,7 +276,19 @@ public class gb_cpu extends gb_components{
             prefix = _prefix;
         }
 
-        void executeinstruction(registers reg, int[] opperands) {
+        private registers reg;
+        private int[] opperands;
+
+        public void setup(registers _reg, int[] _opperands) {
+            reg = _reg;
+            opperands = _opperands;
+        }
+
+        public void execute() {
+            executeinstruction();
+        }
+
+        void executeinstruction() {
             if (prefix == 0) {
                 switch (opcode) {
                     case 0x0: {
@@ -307,7 +326,7 @@ public class gb_cpu extends gb_components{
                     }
                     case 0x8: {
                         functions.__LD__a16__SP(reg, opperands);
-                        break; 
+                        break;
                     }
                     case 0x9: {
                         functions.__ADD_HL_BC(reg, opperands);
@@ -447,7 +466,7 @@ public class gb_cpu extends gb_components{
                     }
                     case 0x2b: {
                         functions.__DEC_HL(reg, opperands);
-                        break; 
+                        break;
                     }
                     case 0x2c: {
                         functions.__INC_L(reg, opperands);
@@ -1293,8 +1312,8 @@ public class gb_cpu extends gb_components{
 
                         break;
                     }
-                    default:{
-                        gb_execeptions.gb_exception("0x%x notdefined",opcode);
+                    default: {
+                        gb_execeptions.gb_exception("0x%x notdefined", opcode);
                         break;
                     }
                 }
@@ -2321,8 +2340,8 @@ public class gb_cpu extends gb_components{
 
                         break;
                     }
-                    default:{
-                        gb_execeptions.gb_exception("0x%x notdefined",opcode);
+                    default: {
+                        gb_execeptions.gb_exception("0x%x notdefined", opcode);
                         break;
                     }
                 }
@@ -2331,21 +2350,16 @@ public class gb_cpu extends gb_components{
         }
 
     }
-
-    private gb_bus bus;
-    private gb_handle handle;
-    private gb_handle.GAMEBOY_TYPE type;
     private registers cpureg;
-
 
     private Pair<Integer, Integer> get_16bit(int get) {
         if (get < gb_bitfunctions.__u_word_min__ && get >= gb_bitfunctions.__u_word_max__)
             get &= 0xffff;
         int hi = get & 0x00ff, lo = get & 0xff;
-        return new Pair<Integer,Integer>(lo, hi);
+        return new Pair<Integer, Integer>(lo, hi);
     }
 
-    private int set_16bit(Pair<Integer,Integer> set) {
+    private int set_16bit(Pair<Integer, Integer> set) {
         int lo = set.getValue0();
         int hi = set.getValue1();
         if ((hi < gb_bitfunctions.__u_byte_min__ && hi >= gb_bitfunctions.__u_byte_max__)
@@ -2359,191 +2373,250 @@ public class gb_cpu extends gb_components{
 
     private final int flaglen = 2;
     private boolean debug, definedinstructions;
-    private op_functions functions = new op_functions();
+    private op_functions functions;
 
-    public gb_cpu(gb_bus _gbbus, boolean[] flags) {
-
-        bus = _gbbus;
-        type = handle.gbtype;
+    public gb_cpu() {
         if (flags == null || flags.length != flaglen) {
             debug = false;
             definedinstructions = false;
         } else {
             debug = (flags[0]) ? true : false;
             definedinstructions = (flags[1]) ? true : false;
-
         }
-        cpureg = new registers(type);
+        cpureg = new registers(super.getversion());
+        functions = new op_functions("function");
+    }
+
+    public void definst_setopcodelist(int[][] codes)
+    {
+        if (codes != null && codes.length > 0) {
+            opcodelist = new Vector<int[]>();
+            for(int i = 0; i < codes.length; i++)
+                opcodelist.add(codes[i]);
+        }
     }
 
     public final int __word16_hi__ = 0;
     public final int __word16_lo__ = 1;
     public final int __ppu_address_max__ = 0xfff, __ppu_address_min__ = 0;
 
-    public void gb_snoopbus(int[] data) {
-        opperands = data;
-    }
-
     public boolean update = true;
     public long duration;
-    public Vector<Pair<Integer,Integer>> opcodelist;
-    int[] opperands = null;
-
-    public void gb_cpurun() {
-        int count = 0;
-        duration = (handle.gbtype == gb_handle.GAMEBOY_TYPE.GBC) ? gb_handle.__gbc_hzclock__ / 60
-                : gb_handle.__gb_hzclock__ / 60;
-        while (update == true) {
-            int opcode = 0, prefix = 0;
-
-            if (definedinstructions == true) {
-                Pair<Integer,Integer> temp = opcodelist.get(count++);
-                prefix = temp.getValue0();
-                opcode = temp.getValue1();
-
-            } else if (definedinstructions == false) {
-                
-            }
-            instruction instruction = operations[prefix][opcode];
-
-            instruction.executeinstruction(cpureg, opperands);
-
-        }
-
-    }
+    public Vector<int[]> opcodelist;
 
     instruction[][] operations = {
-        {
-            //0x00-0x0f
-            //no o
-            new instruction("NOP",0x00,0,1,functions),
-            new instruction("LD BC,d16",0x01,0,3,functions),
-            new instruction("LD (BC),A",0x02,0,1,functions),
-            new instruction("INC BC",0x03,0,1,functions),
-            new instruction("INC B",0x04,0,1,functions),
-            new instruction("DEC B",0x05,0,1,functions),
-            new instruction("LD B,d8",0x06,0,1,functions),
-            new instruction("RLCA",0x07,0,1,functions),
-            new instruction("LD (a16),SP",0x08,0,3,functions),
-            new instruction("ADD HL,BC",0x09,0,1,functions),
-            new instruction("LD A,(BC)",0x0a,0,1,functions),
-            new instruction("DEC BC",0x0b,0,1,functions),
-            new instruction("INC C",0x0c,0,1,functions),
-            new instruction("DEC C",0x0d,0,1,functions),
-            new instruction("LD C,d8",0x0e,0,2,functions),
-            new instruction("RRCA",0x0f,0,1,functions),
-            //0x10-0x1f
+            {
+                    // 0x00-0x0f
+                    // no o
+                    new instruction("NOP", 0x00, 0, 1, functions),
+                    new instruction("LD BC,d16", 0x01, 0, 3, functions),
+                    new instruction("LD (BC),A", 0x02, 0, 1, functions),
+                    new instruction("INC BC", 0x03, 0, 1, functions),
+                    new instruction("INC B", 0x04, 0, 1, functions),
+                    new instruction("DEC B", 0x05, 0, 1, functions),
+                    new instruction("LD B,d8", 0x06, 0, 1, functions),
+                    new instruction("RLCA", 0x07, 0, 1, functions),
+                    new instruction("LD (a16),SP", 0x08, 0, 3, functions),
+                    new instruction("ADD HL,BC", 0x09, 0, 1, functions),
+                    new instruction("LD A,(BC)", 0x0a, 0, 1, functions),
+                    new instruction("DEC BC", 0x0b, 0, 1, functions),
+                    new instruction("INC C", 0x0c, 0, 1, functions),
+                    new instruction("DEC C", 0x0d, 0, 1, functions),
+                    new instruction("LD C,d8", 0x0e, 0, 2, functions),
+                    new instruction("RRCA", 0x0f, 0, 1, functions),
+                    // 0x10-0x1f
 
-            new instruction("STOP",0x10,0,2,functions),
-            new instruction("LD DE,d16",0x11,0,3,functions),
-            new instruction("LD (DE),A",0x12,0,1,functions),
-            new instruction("INC DE",0x13,0,1,functions),
-            new instruction("INC D",0x14,0,1,functions),
-            new instruction("DEC D",0x15,0,1,functions),
-            new instruction("LD D,d8",0x16,0,2,functions),
-            new instruction("RLA",0x17,0,1,functions),
-            new instruction("JR r8",0x18,0,2,functions),
-            new instruction("ADD HL,DE",0x19,0,1,functions),
-            new instruction("LD A,(DE)",0x1a,0,1,functions),
-            new instruction("DEC DE",0x1b,0,1,functions),
-            new instruction("INC E",0x1c,0,1,functions),
-            new instruction("DEC E",0x1d,0,1,functions),
-            new instruction("LD E,d8",0x1e,0,2,functions),
-            new instruction("RRA",0x1f,0,1,functions),
+                    new instruction("STOP", 0x10, 0, 2, functions),
+                    new instruction("LD DE,d16", 0x11, 0, 3, functions),
+                    new instruction("LD (DE),A", 0x12, 0, 1, functions),
+                    new instruction("INC DE", 0x13, 0, 1, functions),
+                    new instruction("INC D", 0x14, 0, 1, functions),
+                    new instruction("DEC D", 0x15, 0, 1, functions),
+                    new instruction("LD D,d8", 0x16, 0, 2, functions),
+                    new instruction("RLA", 0x17, 0, 1, functions),
+                    new instruction("JR r8", 0x18, 0, 2, functions),
+                    new instruction("ADD HL,DE", 0x19, 0, 1, functions),
+                    new instruction("LD A,(DE)", 0x1a, 0, 1, functions),
+                    new instruction("DEC DE", 0x1b, 0, 1, functions),
+                    new instruction("INC E", 0x1c, 0, 1, functions),
+                    new instruction("DEC E", 0x1d, 0, 1, functions),
+                    new instruction("LD E,d8", 0x1e, 0, 2, functions),
+                    new instruction("RRA", 0x1f, 0, 1, functions),
 
-            //0x20-0x2f
+                    // 0x20-0x2f
 
-            new instruction("JR NZ R8",0x20,0,2,functions),
-            new instruction("LD HL,d16",0x21,0,3,functions),
-            new instruction("LD (HL),A",0x22,0,1,functions),
-            new instruction("INC HL",0x23,0,1,functions),
-            new instruction("INC H",0x24,0,1,functions),
-            new instruction("DEC H",0x25,0,1,functions),
-            new instruction("LD H,d8",0x26,0,2,functions),
-            new instruction("DAA",0x27,0,1,functions),
-            new instruction("JR Z,r8",0x28,0,2,functions),
-            new instruction("ADD HL,HL",0x29,0,1,functions),
-            new instruction("LD A,(HL+)",0x2a,0,1,functions),
-            new instruction("DEC HL",0x2b,0,1,functions),
-            new instruction("INC L",0x2c,0,1,functions),
-            new instruction("DEC L",0x2d,0,1,functions),
-            new instruction("LD L,d8",0x2e,0,2,functions),
-            new instruction("CPL",0x2f,0,1,functions),
-            //0x30-0x3f
+                    new instruction("JR NZ R8", 0x20, 0, 2, functions),
+                    new instruction("LD HL,d16", 0x21, 0, 3, functions),
+                    new instruction("LD (HL),A", 0x22, 0, 1, functions),
+                    new instruction("INC HL", 0x23, 0, 1, functions),
+                    new instruction("INC H", 0x24, 0, 1, functions),
+                    new instruction("DEC H", 0x25, 0, 1, functions),
+                    new instruction("LD H,d8", 0x26, 0, 2, functions),
+                    new instruction("DAA", 0x27, 0, 1, functions),
+                    new instruction("JR Z,r8", 0x28, 0, 2, functions),
+                    new instruction("ADD HL,HL", 0x29, 0, 1, functions),
+                    new instruction("LD A,(HL+)", 0x2a, 0, 1, functions),
+                    new instruction("DEC HL", 0x2b, 0, 1, functions),
+                    new instruction("INC L", 0x2c, 0, 1, functions),
+                    new instruction("DEC L", 0x2d, 0, 1, functions),
+                    new instruction("LD L,d8", 0x2e, 0, 2, functions),
+                    new instruction("CPL", 0x2f, 0, 1, functions),
+                    // 0x30-0x3f
 
-            new instruction("JR NC,R8",0x30,0,2,functions),
-            new instruction("LD SP,d16",0x31,0 ,3,functions),
-            new instruction("LD (SP),A",0x32,0,1,functions),
-            new instruction("INC SP",0x33,0,1,functions),
-            new instruction("INC HL",0x34,0,1,functions),
-            new instruction("DEC HL",0x35,0,1,functions),
-            new instruction("LD HL,d8",0x36,0,2,functions),
-            new instruction("SCF",0x37,0,1,functions),
-            new instruction("JR C, r8",0x38,0,2,functions),
-            new instruction("ADD HL,SP",0x39,0,1,functions),
-            new instruction("LD A,(HL-)",0x3a,0,1,functions),
-            new instruction("DEC SP",0x3b,0,1,functions),
-            new instruction("INC A",0x3c,0,1,functions),
-            new instruction("DEC A",0x3d,0,1,functions),
-            new instruction("LD A,d8",0x3e,0,2,functions),
-            new instruction("CCF",0x3f,0,1,functions),
-            //0x40-0x4f
+                    new instruction("JR NC,R8", 0x30, 0, 2, functions),
+                    new instruction("LD SP,d16", 0x31, 0, 3, functions),
+                    new instruction("LD (SP),A", 0x32, 0, 1, functions),
+                    new instruction("INC SP", 0x33, 0, 1, functions),
+                    new instruction("INC HL", 0x34, 0, 1, functions),
+                    new instruction("DEC HL", 0x35, 0, 1, functions),
+                    new instruction("LD HL,d8", 0x36, 0, 2, functions),
+                    new instruction("SCF", 0x37, 0, 1, functions),
+                    new instruction("JR C, r8", 0x38, 0, 2, functions),
+                    new instruction("ADD HL,SP", 0x39, 0, 1, functions),
+                    new instruction("LD A,(HL-)", 0x3a, 0, 1, functions),
+                    new instruction("DEC SP", 0x3b, 0, 1, functions),
+                    new instruction("INC A", 0x3c, 0, 1, functions),
+                    new instruction("DEC A", 0x3d, 0, 1, functions),
+                    new instruction("LD A,d8", 0x3e, 0, 2, functions),
+                    new instruction("CCF", 0x3f, 0, 1, functions),
+                    // 0x40-0x4f
 
-            new instruction("LD B,B",0x40,0,1,functions),
+                    new instruction("LD B,B", 0x40, 0, 1, functions),
 
-            //0x50-0x5f
+                    // 0x50-0x5f
 
-            new instruction("LD D,B",0x50,0,1,functions),
-            
-            //0x60-0x6f
+                    new instruction("LD D,B", 0x50, 0, 1, functions),
 
-            new instruction("LD H,B",0x60,0,1,functions),
+                    // 0x60-0x6f
 
-            //0x70-0x7f
+                    new instruction("LD H,B", 0x60, 0, 1, functions),
 
-            new instruction("LD (HL),B",0x70,0,1,functions),
+                    // 0x70-0x7f
 
-            //0x80-0x8f
+                    new instruction("LD (HL),B", 0x70, 0, 1, functions),
 
-            new instruction("ADD A,B",0x80,0,1,functions),
+                    // 0x80-0x8f
 
-            //0x90-0x9f
+                    new instruction("ADD A,B", 0x80, 0, 1, functions),
 
-            new instruction("SUB B",0x90,0,1,functions),
+                    // 0x90-0x9f
 
+                    new instruction("SUB B", 0x90, 0, 1, functions),
 
-            //0xa0-0xaf
+                    // 0xa0-0xaf
 
-            new instruction("AND B",0xa0,0,1,functions),
-            
-            //0xb0-0xbf
+                    new instruction("AND B", 0xa0, 0, 1, functions),
 
-            new instruction("OR B",0xb0,0,1,functions),
+                    // 0xb0-0xbf
 
-            //0xc0-0xcf
+                    new instruction("OR B", 0xb0, 0, 1, functions),
 
-            new instruction("RET NZ",0xc0,0,1,functions),
-            
-            //0xd0-0xdf
+                    // 0xc0-0xcf
 
-            new instruction("RET NC",0xd0,0,1,functions),
+                    new instruction("RET NZ", 0xc0, 0, 1, functions),
 
-            //0xe0-0xef
+                    // 0xd0-0xdf
 
-            new instruction("LDH (a8),A",0xe0,0,2,functions),
+                    new instruction("RET NC", 0xd0, 0, 1, functions),
 
-            //0xf0-0xff
+                    // 0xe0-0xef
 
-            new instruction("LDH A,(a8)",0xf0,0,2,functions),
-        },
-        {
-        
-        }
+                    new instruction("LDH (a8),A", 0xe0, 0, 2, functions),
+
+                    // 0xf0-0xff
+
+                    new instruction("LDH A,(a8)", 0xf0, 0, 2, functions),
+            },
+            {
+
+            }
     };
 
-    public class op_functions {
+    public class op_functions extends Thread {
 
-        private void onecycle() {
+        private String name;
+        private Thread thread;
+        private int address;
+        private int[] opperands;
+
+        op_functions(String _name) {
+            name = _name;
+            thread = new Thread(this, name);
+            thread.start();
+        }
+
+        @Override
+        public void run() {
+            gb_cpurun();
+        }
+
+        synchronized public void send() {
+            if (definedinstructions == true)
+                gb_debug.debug_odatassend(address, opperands);
+            else
+                getbus().bus_send(address, opperands);
+        }
+
+        synchronized public void recieve() {
+            int[] data;
+            if (definedinstructions == true)
+                data = gb_debug.debug_opdatasrecieve();
+            else
+                data = getbus().bus_recieve();
+
+            opperands = new int[data.length + 1];
+            address = opperands[0];
+            for (int i = 1, n = 0; i < opperands.length; i++, n++) {
+                opperands[n] = data[i];
+            }
+
+        }
+
+        synchronized public void gb_cpurun() {
+            int count = 0;
+            String[] regStrings = cpureg.get_register_strings();
+            duration = (version == gb_handle.GAMEBOY_TYPE.GBC) ? gb_handle.__gbc_hzclock__ / 1000
+                    : gb_handle.__gb_hzclock__ / 1000;
+                    
+            while (update == true) {
+                int opcode = 0, prefix = 0;
+
+                if (opcodelist.size() - count == 0) {
+                    update = false;
+                    continue;
+                }
+
+                recieve();
+                int startat = 0;
+                if (opperands[0] == 0xcb) {
+                    prefix = 0xcb;
+                    opcode = opperands[1];
+                    opperands = new int[(startat = opperands.length - 2)];
+                } else {
+                    prefix = 0;
+                    opcode = opperands[0];
+                    opperands = new int[(startat = opperands.length - 1)];
+                }
+                int opperandslen = opperands.length;
+                for (int i = startat, n = 0; i < opperandslen; i++, n++) {
+                    opperands[n] = opperands[i];
+                }
+
+                if(debug == true)
+                {
+                    int[] temp =  cpureg.get_register_ary();
+                    for(int i = 0; i < temp.length; i++){
+                        gb_execeptions.gb_putlog("%s -> (%d,%x)", regStrings[i], temp[i], temp[i]);
+                    }
+                    gb_execeptions.gb_printlogsif();
+                }
+                instruction instruction = operations[prefix][opcode];
+                instruction.setup(cpureg, opperands);
+                instruction.executeinstruction();
+            }
+        }
+
+        synchronized private void onecycle() {
             try {
                 Thread.sleep(duration);
             } catch (InterruptedException e) {
@@ -2551,984 +2624,985 @@ public class gb_cpu extends gb_components{
             }
         }
 
-        public void __NOP(registers reg, int[] opperands) {
+        synchronized public void __NOP(registers reg, int[] opperands) {
             onecycle();
             return;
         }
 
-        public void __LD_BC_A(registers reg, int[] opperands) {
+        synchronized public void __LD_BC_A(registers reg, int[] opperands) {
             return;
         }
 
-        public void __INC_BC(registers reg, int[] opperands) {
+        synchronized public void __INC_BC(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_BC_d16(registers reg, int[] opperands) {
+        synchronized public void __LD_BC_d16(registers reg, int[] opperands) {
             return;
         }
 
-        public void __DEC_B(registers reg, int[] opperands) {
+        synchronized public void __DEC_B(registers reg, int[] opperands) {
             return;
         }
 
-        public void __INC_B(registers reg, int[] opperands) {
+        synchronized public void __INC_B(registers reg, int[] opperands) {
             return;
         }
 
-        public void __RLCA(registers reg, int[] opperands) {
+        synchronized public void __RLCA(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_B_d8(registers reg, int[] opperands) {
+        synchronized public void __LD_B_d8(registers reg, int[] opperands) {
             return;
         }
 
-        public void __ADD_HL_BC(registers reg, int[] opperands) {
+        synchronized public void __ADD_HL_BC(registers reg, int[] opperands) {
         }
 
-        public void __LD__a16__SP(registers reg, int[] opperands) {
+        synchronized public void __LD__a16__SP(registers reg, int[] opperands) {
         }
 
-        public void __DEC_BC(registers reg, int[] opperands) {
+        synchronized public void __DEC_BC(registers reg, int[] opperands) {
         }
 
-        public void __LD_A__BC__(registers reg, int[] opperands) {
+        synchronized public void __LD_A__BC__(registers reg, int[] opperands) {
         }
 
-        public void __DEC_C(registers reg, int[] opperands) {
+        synchronized public void __DEC_C(registers reg, int[] opperands) {
         }
 
-        public void __INC_C(registers reg, int[] opperands) {
+        synchronized public void __INC_C(registers reg, int[] opperands) {
         }
 
-        public void __LD_C_d8(registers reg, int[] opperands) {
+        synchronized public void __LD_C_d8(registers reg, int[] opperands) {
         }
 
-        public void __LD_DE_d16(registers reg, int[] opperands) {
+        synchronized public void __LD_DE_d16(registers reg, int[] opperands) {
         }
 
-        public void __STOP(registers reg, int[] opperands) {
+        synchronized public void __STOP(registers reg, int[] opperands) {
             update = false;
             onecycle();
             return;
         }
 
-        public void __INC_DE(registers reg, int[] opperands) {
+        synchronized public void __INC_DE(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD__DE__A(registers reg, int[] opperands) {
+        synchronized public void __LD__DE__A(registers reg, int[] opperands) {
             return;
         }
 
-        public void __DEC_D(registers reg, int[] opperands) {
+        synchronized public void __DEC_D(registers reg, int[] opperands) {
             return;
         }
 
-        public void __INC_D(registers reg, int[] opperands) {
+        synchronized public void __INC_D(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_D_d8(registers reg, int[] opperands) {
+        synchronized public void __LD_D_d8(registers reg, int[] opperands) {
             return;
         }
 
-        public void __ADD_HL_DE(registers reg, int[] opperands) {
+        synchronized public void __ADD_HL_DE(registers reg, int[] opperands) {
             return;
         }
 
-        public void __JR_r8(registers reg, int[] opperands) {
+        synchronized public void __JR_r8(registers reg, int[] opperands) {
             return;
         }
 
-        public void __DEC_DE(registers reg, int[] opperands) {
+        synchronized public void __DEC_DE(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_A__DE__(registers reg, int[] opperands) {
+        synchronized public void __LD_A__DE__(registers reg, int[] opperands) {
             return;
         }
 
-        public void __DEC_E(registers reg, int[] opperands) {
+        synchronized public void __DEC_E(registers reg, int[] opperands) {
             return;
         }
 
-        public void __INC_E(registers reg, int[] opperands) {
+        synchronized public void __INC_E(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_E_d8(registers reg, int[] opperands) {
+        synchronized public void __LD_E_d8(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_HL_d16(registers reg, int[] opperands) {
+        synchronized public void __LD_HL_d16(registers reg, int[] opperands) {
             return;
         }
 
-        public void __JR_NZ_r8(registers reg, int[] opperands) {
+        synchronized public void __JR_NZ_r8(registers reg, int[] opperands) {
             return;
         }
 
-        public void __INC_HL(registers reg, int[] opperands) {
+        synchronized public void __INC_HL(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD__HLI__A(registers reg, int[] opperands) {
+        synchronized public void __LD__HLI__A(registers reg, int[] opperands) {
             return;
         }
 
-        public void __DEC_H(registers reg, int[] opperands) {
+        synchronized public void __DEC_H(registers reg, int[] opperands) {
             return;
         }
 
-        public void __INC_H(registers reg, int[] opperands) {
+        synchronized public void __INC_H(registers reg, int[] opperands) {
             return;
         }
 
-        public void __DAA(registers reg, int[] opperands) {
+        synchronized public void __DAA(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_H_d8(registers reg, int[] opperands) {
+        synchronized public void __LD_H_d8(registers reg, int[] opperands) {
             return;
         }
 
-        public void __ADD_HL_HL(registers reg, int[] opperands) {
+        synchronized public void __ADD_HL_HL(registers reg, int[] opperands) {
             return;
         }
 
-        public void __JR_Z_r8(registers reg, int[] opperands) {
+        synchronized public void __JR_Z_r8(registers reg, int[] opperands) {
             return;
         }
 
-        public void __DEC_HL(registers reg, int[] opperands) {
+        synchronized public void __DEC_HL(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_A__HLI__(registers reg, int[] opperands) {
+        synchronized public void __LD_A__HLI__(registers reg, int[] opperands) {
             return;
         }
 
-        public void __DEC_L(registers reg, int[] opperands) {
+        synchronized public void __DEC_L(registers reg, int[] opperands) {
             return;
         }
 
-        public void __INC_L(registers reg, int[] opperands) {
+        synchronized public void __INC_L(registers reg, int[] opperands) {
             return;
         }
 
-        public void __CP(registers reg, int[] opperands) {
+        synchronized public void __CP(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_L_d8(registers reg, int[] opperands) {
+        synchronized public void __LD_L_d8(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_SP_d16(registers reg, int[] opperands) {
+        synchronized public void __LD_SP_d16(registers reg, int[] opperands) {
             return;
         }
 
-        public void __JR_NC_r8(registers reg, int[] opperands) {
+        synchronized public void __JR_NC_r8(registers reg, int[] opperands) {
             return;
         }
 
-        public void __INC_SP(registers reg, int[] opperands) {
+        synchronized public void __INC_SP(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD__HLD__A(registers reg, int[] opperands) {
+        synchronized public void __LD__HLD__A(registers reg, int[] opperands) {
             return;
         }
 
-        public void __DEC__HL__(registers reg, int[] opperands) {
+        synchronized public void __DEC__HL__(registers reg, int[] opperands) {
             return;
         }
 
-        public void __INC__HL__(registers reg, int[] opperands) {
+        synchronized public void __INC__HL__(registers reg, int[] opperands) {
             return;
         }
 
-        public void __SCF(registers reg, int[] opperands) {
+        synchronized public void __SCF(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD__HL__d8(registers reg, int[] opperands) {
+        synchronized public void __LD__HL__d8(registers reg, int[] opperands) {
             return;
         }
 
-        public void __ADD_HL_SP(registers reg, int[] opperands) {
+        synchronized public void __ADD_HL_SP(registers reg, int[] opperands) {
             return;
         }
 
-        public void __JR_C_r8(registers reg, int[] opperands) {
+        synchronized public void __JR_C_r8(registers reg, int[] opperands) {
             return;
         }
 
-        public void __DEC_SP(registers reg, int[] opperands) {
+        synchronized public void __DEC_SP(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_A__HLD__(registers reg, int[] opperands) {
+        synchronized public void __LD_A__HLD__(registers reg, int[] opperands) {
             return;
         }
 
-        public void __DEC_A(registers reg, int[] opperands) {
+        synchronized public void __DEC_A(registers reg, int[] opperands) {
             return;
         }
 
-        public void __INC_A(registers reg, int[] opperands) {
+        synchronized public void __INC_A(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_A_d8(registers reg, int[] opperands) {
+        synchronized public void __LD_A_d8(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_B_C(registers reg, int[] opperands) {
+        synchronized public void __LD_B_C(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_B_B(registers reg, int[] opperands) {
+        synchronized public void __LD_B_B(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_B_E(registers reg, int[] opperands) {
+        synchronized public void __LD_B_E(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_B_D(registers reg, int[] opperands) {
+        synchronized public void __LD_B_D(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_B_L(registers reg, int[] opperands) {
+        synchronized public void __LD_B_L(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_B_H(registers reg, int[] opperands) {
+        synchronized public void __LD_B_H(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_B_A(registers reg, int[] opperands) {
+        synchronized public void __LD_B_A(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_B__HL__(registers reg, int[] opperands) {
+        synchronized public void __LD_B__HL__(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_C_C(registers reg, int[] opperands) {
+        synchronized public void __LD_C_C(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_C_B(registers reg, int[] opperands) {
+        synchronized public void __LD_C_B(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_C_E(registers reg, int[] opperands) {
+        synchronized public void __LD_C_E(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_C_D(registers reg, int[] opperands) {
+        synchronized public void __LD_C_D(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_C_L(registers reg, int[] opperands) {
+        synchronized public void __LD_C_L(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_C_H(registers reg, int[] opperands) {
+        synchronized public void __LD_C_H(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_C_A(registers reg, int[] opperands) {
+        synchronized public void __LD_C_A(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_C__HL_(registers reg, int[] opperands) {
+        synchronized public void __LD_C__HL_(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_D_C(registers reg, int[] opperands) {
+        synchronized public void __LD_D_C(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_D_B(registers reg, int[] opperands) {
+        synchronized public void __LD_D_B(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_D_E(registers reg, int[] opperands) {
+        synchronized public void __LD_D_E(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_D_D(registers reg, int[] opperands) {
+        synchronized public void __LD_D_D(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_D_L(registers reg, int[] opperands) {
+        synchronized public void __LD_D_L(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_D_H(registers reg, int[] opperands) {
+        synchronized public void __LD_D_H(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_D_A(registers reg, int[] opperands) {
+        synchronized public void __LD_D_A(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_D__HL__(registers reg, int[] opperands) {
+        synchronized public void __LD_D__HL__(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_E_C(registers reg, int[] opperands) {
+        synchronized public void __LD_E_C(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_E_B(registers reg, int[] opperands) {
+        synchronized public void __LD_E_B(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_E_E(registers reg, int[] opperands) {
+        synchronized public void __LD_E_E(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_E_D(registers reg, int[] opperands) {
+        synchronized public void __LD_E_D(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_E_L(registers reg, int[] opperands) {
+        synchronized public void __LD_E_L(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_E_H(registers reg, int[] opperands) {
+        synchronized public void __LD_E_H(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_E_A(registers reg, int[] opperands) {
+        synchronized public void __LD_E_A(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_E__HL_(registers reg, int[] opperands) {
+        synchronized public void __LD_E__HL_(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_H_C(registers reg, int[] opperands) {
+        synchronized public void __LD_H_C(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_H_B(registers reg, int[] opperands) {
+        synchronized public void __LD_H_B(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_H_E(registers reg, int[] opperands) {
+        synchronized public void __LD_H_E(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_H_D(registers reg, int[] opperands) {
+        synchronized public void __LD_H_D(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_H_L(registers reg, int[] opperands) {
+        synchronized public void __LD_H_L(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_H_H(registers reg, int[] opperands) {
+        synchronized public void __LD_H_H(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_H_A(registers reg, int[] opperands) {
+        synchronized public void __LD_H_A(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_H__HL__(registers reg, int[] opperands) {
+        synchronized public void __LD_H__HL__(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_L_C(registers reg, int[] opperands) {
+        synchronized public void __LD_L_C(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_L_B(registers reg, int[] opperands) {
+        synchronized public void __LD_L_B(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_L_E(registers reg, int[] opperands) {
+        synchronized public void __LD_L_E(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_L_D(registers reg, int[] opperands) {
+        synchronized public void __LD_L_D(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_L_L(registers reg, int[] opperands) {
+        synchronized public void __LD_L_L(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_L_H(registers reg, int[] opperands) {
+        synchronized public void __LD_L_H(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_L_A(registers reg, int[] opperands) {
+        synchronized public void __LD_L_A(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD__HL__B(registers reg, int[] opperands) {
+        synchronized public void __LD__HL__B(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_L__HL__(registers reg, int[] opperands) {
+        synchronized public void __LD_L__HL__(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD__HL__D(registers reg, int[] opperands) {
+        synchronized public void __LD__HL__D(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD__HL__C(registers reg, int[] opperands) {
+        synchronized public void __LD__HL__C(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD__HL__H(registers reg, int[] opperands) {
+        synchronized public void __LD__HL__H(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD__HL__E(registers reg, int[] opperands) {
+        synchronized public void __LD__HL__E(registers reg, int[] opperands) {
             return;
         }
 
-        public void __HALT(registers reg, int[] opperands) {
+        synchronized public void __HALT(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD__HL__L(registers reg, int[] opperands) {
+        synchronized public void __LD__HL__L(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_A_B(registers reg, int[] opperands) {
+        synchronized public void __LD_A_B(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD__HL__A(registers reg, int[] opperands) {
+        synchronized public void __LD__HL__A(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_A_D(registers reg, int[] opperands) {
+        synchronized public void __LD_A_D(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_A_C(registers reg, int[] opperands) {
+        synchronized public void __LD_A_C(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_A_H(registers reg, int[] opperands) {
+        synchronized public void __LD_A_H(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_A_E(registers reg, int[] opperands) {
+        synchronized public void __LD_A_E(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_A__HL_(registers reg, int[] opperands) {
+        synchronized public void __LD_A__HL_(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_A_L(registers reg, int[] opperands) {
+        synchronized public void __LD_A_L(registers reg, int[] opperands) {
             return;
         }
 
-        public void __ADD_A_B(registers reg, int[] opperands) {
+        synchronized public void __ADD_A_B(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_A_A(registers reg, int[] opperands) {
+        synchronized public void __LD_A_A(registers reg, int[] opperands) {
             return;
         }
 
-        public void __ADD_A_D(registers reg, int[] opperands) {
+        synchronized public void __ADD_A_D(registers reg, int[] opperands) {
             return;
         }
 
-        public void __ADD_A_C(registers reg, int[] opperands) {
+        synchronized public void __ADD_A_C(registers reg, int[] opperands) {
             return;
         }
 
-        public void __ADD_A_H(registers reg, int[] opperands) {
+        synchronized public void __ADD_A_H(registers reg, int[] opperands) {
             return;
         }
 
-        public void __ADD_A_E(registers reg, int[] opperands) {
+        synchronized public void __ADD_A_E(registers reg, int[] opperands) {
             return;
         }
 
-        public void __ADD_A__HL_(registers reg, int[] opperands) {
+        synchronized public void __ADD_A__HL_(registers reg, int[] opperands) {
             return;
         }
 
-        public void __ADD_A_L(registers reg, int[] opperands) {
+        synchronized public void __ADD_A_L(registers reg, int[] opperands) {
             return;
         }
 
-        public void __ADC_A_B(registers reg, int[] opperands) {
+        synchronized public void __ADC_A_B(registers reg, int[] opperands) {
             return;
         }
 
-        public void __ADD_A_A(registers reg, int[] opperands) {
+        synchronized public void __ADD_A_A(registers reg, int[] opperands) {
             return;
         }
 
-        public void __ADC_A_D(registers reg, int[] opperands) {
+        synchronized public void __ADC_A_D(registers reg, int[] opperands) {
             return;
         }
 
-        public void __ADC_A_C(registers reg, int[] opperands) {
+        synchronized public void __ADC_A_C(registers reg, int[] opperands) {
             return;
         }
 
-        public void __ADC_A_H(registers reg, int[] opperands) {
+        synchronized public void __ADC_A_H(registers reg, int[] opperands) {
             return;
         }
 
-        public void __ADC_A_E(registers reg, int[] opperands) {
+        synchronized public void __ADC_A_E(registers reg, int[] opperands) {
             return;
         }
 
-        public void __ADC_A__HL_(registers reg, int[] opperands) {
+        synchronized public void __ADC_A__HL_(registers reg, int[] opperands) {
             return;
         }
 
-        public void __ADC_A_L(registers reg, int[] opperands) {
+        synchronized public void __ADC_A_L(registers reg, int[] opperands) {
             return;
         }
 
-        public void __SUB_B(registers reg, int[] opperands) {
+        synchronized public void __SUB_B(registers reg, int[] opperands) {
             return;
         }
 
-        public void __ADC_A_(registers reg, int[] opperands) {
+        synchronized public void __ADC_A_(registers reg, int[] opperands) {
             return;
         }
 
-        public void __SUB_D(registers reg, int[] opperands) {
+        synchronized public void __SUB_D(registers reg, int[] opperands) {
             return;
         }
 
-        public void __SUB_C(registers reg, int[] opperands) {
+        synchronized public void __SUB_C(registers reg, int[] opperands) {
             return;
         }
 
-        public void __SUB_H(registers reg, int[] opperands) {
+        synchronized public void __SUB_H(registers reg, int[] opperands) {
             return;
         }
 
-        public void __SUB_E(registers reg, int[] opperands) {
+        synchronized public void __SUB_E(registers reg, int[] opperands) {
             return;
         }
 
-        public void __SUB__HL_(registers reg, int[] opperands) {
+        synchronized public void __SUB__HL_(registers reg, int[] opperands) {
             return;
         }
 
-        public void __SUB_L(registers reg, int[] opperands) {
+        synchronized public void __SUB_L(registers reg, int[] opperands) {
             return;
         }
 
-        public void __SBC_A_B(registers reg, int[] opperands) {
+        synchronized public void __SBC_A_B(registers reg, int[] opperands) {
             return;
         }
 
-        public void __SUB_A(registers reg, int[] opperands) {
+        synchronized public void __SUB_A(registers reg, int[] opperands) {
             return;
         }
 
-        public void __SBC_A_D(registers reg, int[] opperands) {
+        synchronized public void __SBC_A_D(registers reg, int[] opperands) {
             return;
         }
 
-        public void __SBC_A_C(registers reg, int[] opperands) {
+        synchronized public void __SBC_A_C(registers reg, int[] opperands) {
             return;
         }
 
-        public void __SBC_A_H(registers reg, int[] opperands) {
+        synchronized public void __SBC_A_H(registers reg, int[] opperands) {
             return;
         }
 
-        public void __SBC_A_E(registers reg, int[] opperands) {
+        synchronized public void __SBC_A_E(registers reg, int[] opperands) {
             return;
         }
 
-        public void __SBC_A__HL_(registers reg, int[] opperands) {
+        synchronized public void __SBC_A__HL_(registers reg, int[] opperands) {
             return;
         }
 
-        public void __SBC_A_L(registers reg, int[] opperands) {
+        synchronized public void __SBC_A_L(registers reg, int[] opperands) {
             return;
         }
 
-        public void __AND_B(registers reg, int[] opperands) {
+        synchronized public void __AND_B(registers reg, int[] opperands) {
             return;
         }
 
-        public void __SBC_A_A(registers reg, int[] opperands) {
+        synchronized public void __SBC_A_A(registers reg, int[] opperands) {
             return;
         }
 
-        public void __AND_D(registers reg, int[] opperands) {
+        synchronized public void __AND_D(registers reg, int[] opperands) {
             return;
         }
 
-        public void __AND_C(registers reg, int[] opperands) {
+        synchronized public void __AND_C(registers reg, int[] opperands) {
             return;
         }
 
-        public void __AND_H(registers reg, int[] opperands) {
+        synchronized public void __AND_H(registers reg, int[] opperands) {
             return;
         }
 
-        public void __AND_E(registers reg, int[] opperands) {
+        synchronized public void __AND_E(registers reg, int[] opperands) {
             return;
         }
 
-        public void __AND__HL_(registers reg, int[] opperands) {
+        synchronized public void __AND__HL_(registers reg, int[] opperands) {
             return;
         }
 
-        public void __AND_L(registers reg, int[] opperands) {
+        synchronized public void __AND_L(registers reg, int[] opperands) {
             return;
         }
 
-        public void __XOR_B(registers reg, int[] opperands) {
+        synchronized public void __XOR_B(registers reg, int[] opperands) {
             return;
         }
 
-        public void __AND_A(registers reg, int[] opperands) {
+        synchronized public void __AND_A(registers reg, int[] opperands) {
             return;
         }
 
-        public void __XOR_D(registers reg, int[] opperands) {
+        synchronized public void __XOR_D(registers reg, int[] opperands) {
             return;
         }
 
-        public void __XOR_C(registers reg, int[] opperands) {
+        synchronized public void __XOR_C(registers reg, int[] opperands) {
             return;
         }
 
-        public void __XOR_H(registers reg, int[] opperands) {
+        synchronized public void __XOR_H(registers reg, int[] opperands) {
             return;
         }
 
-        public void __XOR_E(registers reg, int[] opperands) {
+        synchronized public void __XOR_E(registers reg, int[] opperands) {
             return;
         }
 
-        public void __XOR__HL_(registers reg, int[] opperands) {
+        synchronized public void __XOR__HL_(registers reg, int[] opperands) {
             return;
         }
 
-        public void __XOR_L(registers reg, int[] opperands) {
+        synchronized public void __XOR_L(registers reg, int[] opperands) {
             return;
         }
 
-        public void __OR_B(registers reg, int[] opperands) {
+        synchronized public void __OR_B(registers reg, int[] opperands) {
             return;
         }
 
-        public void __XOR_A(registers reg, int[] opperands) {
+        synchronized public void __XOR_A(registers reg, int[] opperands) {
             return;
         }
 
-        public void __OR_D(registers reg, int[] opperands) {
+        synchronized public void __OR_D(registers reg, int[] opperands) {
             return;
         }
 
-        public void __OR_C(registers reg, int[] opperands) {
+        synchronized public void __OR_C(registers reg, int[] opperands) {
             return;
         }
 
-        public void __OR_H(registers reg, int[] opperands) {
+        synchronized public void __OR_H(registers reg, int[] opperands) {
             return;
         }
 
-        public void __OR_E(registers reg, int[] opperands) {
+        synchronized public void __OR_E(registers reg, int[] opperands) {
             return;
         }
 
-        public void __OR__HL__(registers reg, int[] opperands) {
+        synchronized public void __OR__HL__(registers reg, int[] opperands) {
             return;
         }
 
-        public void __OR_L(registers reg, int[] opperands) {
+        synchronized public void __OR_L(registers reg, int[] opperands) {
             return;
         }
 
-        public void __CP_B(registers reg, int[] opperands) {
+        synchronized public void __CP_B(registers reg, int[] opperands) {
             return;
         }
 
-        public void __OR_A(registers reg, int[] opperands) {
+        synchronized public void __OR_A(registers reg, int[] opperands) {
             return;
         }
 
-        public void __CP_D(registers reg, int[] opperands) {
+        synchronized public void __CP_D(registers reg, int[] opperands) {
             return;
         }
 
-        public void __CP_C(registers reg, int[] opperands) {
+        synchronized public void __CP_C(registers reg, int[] opperands) {
             return;
         }
 
-        public void __CP_H(registers reg, int[] opperands) {
+        synchronized public void __CP_H(registers reg, int[] opperands) {
             return;
         }
 
-        public void __CP_E(registers reg, int[] opperands) {
+        synchronized public void __CP_E(registers reg, int[] opperands) {
             return;
         }
 
-        public void __CP__HL_(registers reg, int[] opperands) {
+        synchronized public void __CP__HL_(registers reg, int[] opperands) {
             return;
         }
 
-        public void __CP_L(registers reg, int[] opperands) {
+        synchronized public void __CP_L(registers reg, int[] opperands) {
             return;
         }
 
-        public void __RET_NZ(registers reg, int[] opperands) {
+        synchronized public void __RET_NZ(registers reg, int[] opperands) {
             return;
         }
 
-        public void __CP_A(registers reg, int[] opperands) {
+        synchronized public void __CP_A(registers reg, int[] opperands) {
             return;
         }
 
-        public void __JP_NZ_a16(registers reg, int[] opperands) {
+        synchronized public void __JP_NZ_a16(registers reg, int[] opperands) {
             return;
         }
 
-        public void __POP_BC(registers reg, int[] opperands) {
+        synchronized public void __POP_BC(registers reg, int[] opperands) {
             return;
         }
 
-        public void __CALL_NZ_a16(registers reg, int[] opperands) {
+        synchronized public void __CALL_NZ_a16(registers reg, int[] opperands) {
             return;
         }
 
-        public void __JP_a16(registers reg, int[] opperands) {
+        synchronized public void __JP_a16(registers reg, int[] opperands) {
             return;
         }
 
-        public void __ADD_A_d8(registers reg, int[] opperands) {
+        synchronized public void __ADD_A_d8(registers reg, int[] opperands) {
             return;
         }
 
-        public void __PUSH_BC(registers reg, int[] opperands) {
+        synchronized public void __PUSH_BC(registers reg, int[] opperands) {
             return;
         }
 
-        public void __RET_Z(registers reg, int[] opperands) {
+        synchronized public void __RET_Z(registers reg, int[] opperands) {
             return;
         }
 
-        public void __RST(registers reg, int[] opperands) {
+        synchronized public void __RST(registers reg, int[] opperands) {
             return;
         }
 
-        public void __JP_Z_a16(registers reg, int[] opperands) {
+        synchronized public void __JP_Z_a16(registers reg, int[] opperands) {
             return;
         }
 
-        public void __RET(registers reg, int[] opperands) {
+        synchronized public void __RET(registers reg, int[] opperands) {
             return;
         }
 
-        public void __CALL_Z_a16(registers reg, int[] opperands) {
+        synchronized public void __CALL_Z_a16(registers reg, int[] opperands) {
             return;
         }
 
-        public void __PREFIX_CB(registers reg, int[] opperands) {
+        synchronized public void __PREFIX_CB(registers reg, int[] opperands) {
             return;
         }
 
-        public void __CALL_a16(registers reg, int[] opperands) {
+        synchronized public void __CALL_a16(registers reg, int[] opperands) {
             return;
         }
 
-        public void __ADC_A_d8(registers reg, int[] opperands) {
+        synchronized public void __ADC_A_d8(registers reg, int[] opperands) {
             return;
         }
 
-        public void __RET_NC(registers reg, int[] opperands) {
+        synchronized public void __RET_NC(registers reg, int[] opperands) {
             return;
         }
 
-        public void __RST_08(registers reg, int[] opperands) {
+        synchronized public void __RST_08(registers reg, int[] opperands) {
             return;
         }
 
-        public void __JP_NC_a16(registers reg, int[] opperands) {
+        synchronized public void __JP_NC_a16(registers reg, int[] opperands) {
             return;
         }
 
-        public void __POP_DE(registers reg, int[] opperands) {
+        synchronized public void __POP_DE(registers reg, int[] opperands) {
             return;
         }
 
-        public void __PUSH_DE(registers reg, int[] opperands) {
+        synchronized public void __PUSH_DE(registers reg, int[] opperands) {
             return;
         }
 
-        public void __CALL_NC_a16(registers reg, int[] opperands) {
+        synchronized public void __CALL_NC_a16(registers reg, int[] opperands) {
             return;
         }
 
-        public void __RST_10H(registers reg, int[] opperands) {
+        synchronized public void __RST_10H(registers reg, int[] opperands) {
             return;
         }
 
-        public void __SUB_d8(registers reg, int[] opperands) {
+        synchronized public void __SUB_d8(registers reg, int[] opperands) {
             return;
         }
 
-        public void __RETI(registers reg, int[] opperands) {
+        synchronized public void __RETI(registers reg, int[] opperands) {
             return;
         }
 
-        public void __RET_C(registers reg, int[] opperands) {
+        synchronized public void __RET_C(registers reg, int[] opperands) {
             return;
         }
 
-        public void __CALL_C_a16(registers reg, int[] opperands) {
+        synchronized public void __CALL_C_a16(registers reg, int[] opperands) {
             return;
         }
 
-        public void __JP_C_a16(registers reg, int[] opperands) {
+        synchronized public void __JP_C_a16(registers reg, int[] opperands) {
             return;
         }
 
-        public void __RST_18(registers reg, int[] opperands) {
+        synchronized public void __RST_18(registers reg, int[] opperands) {
             return;
         }
 
-        public void __SBC_A_d8(registers reg, int[] opperands) {
+        synchronized public void __SBC_A_d8(registers reg, int[] opperands) {
             return;
         }
 
-        public void __POP_HL(registers reg, int[] opperands) {
+        synchronized public void __POP_HL(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LDH__a8__A(registers reg, int[] opperands) {
+        synchronized public void __LDH__a8__A(registers reg, int[] opperands) {
             return;
         }
 
-        public void __PUSH_HL(registers reg, int[] opperands) {
+        synchronized public void __PUSH_HL(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD__C__A(registers reg, int[] opperands) {
+        synchronized public void __LD__C__A(registers reg, int[] opperands) {
             return;
         }
 
-        public void __RST_20H(registers reg, int[] opperands) {
+        synchronized public void __RST_20H(registers reg, int[] opperands) {
             return;
         }
 
-        public void __AND_d8(registers reg, int[] opperands) {
+        synchronized public void __AND_d8(registers reg, int[] opperands) {
             return;
         }
 
-        public void __JP_HL_(registers reg, int[] opperands) {
+        synchronized public void __JP_HL_(registers reg, int[] opperands) {
             return;
         }
 
-        public void __ADD_SP_r8(registers reg, int[] opperands) {
+        synchronized public void __ADD_SP_r8(registers reg, int[] opperands) {
             return;
         }
 
-        public void __XOR_d8(registers reg, int[] opperands) {
+        synchronized public void __XOR_d8(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_a16_A(registers reg, int[] opperands) {
+        synchronized public void __LD_a16_A(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LDH_A_a8(registers reg, int[] opperands) {
+        synchronized public void __LDH_A_a8(registers reg, int[] opperands) {
             return;
         }
 
-        public void __RST_28(registers reg, int[] opperands) {
+        synchronized public void __RST_28(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_A__C__(registers reg, int[] opperands) {
+        synchronized public void __LD_A__C__(registers reg, int[] opperands) {
             return;
         }
 
-        public void __POP_AF(registers reg, int[] opperands) {
+        synchronized public void __POP_AF(registers reg, int[] opperands) {
             return;
         }
 
-        public void __PUSH_AF(registers reg, int[] opperands) {
+        synchronized public void __PUSH_AF(registers reg, int[] opperands) {
             return;
         }
 
-        public void __DI(registers reg, int[] opperands) {
+        synchronized public void __DI(registers reg, int[] opperands) {
             return;
         }
 
-        public void __RST_30H(registers reg, int[] opperands) {
+        synchronized public void __RST_30H(registers reg, int[] opperands) {
             return;
         }
 
-        public void __OR_d8(registers reg, int[] opperands) {
+        synchronized public void __OR_d8(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_SP_HL(registers reg, int[] opperands) {
+        synchronized public void __LD_SP_HL(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_HL_SP_I_r8(registers reg, int[] opperands) {
+        synchronized public void __LD_HL_SP_I_r8(registers reg, int[] opperands) {
             return;
         }
 
-        public void __EI(registers reg, int[] opperands) {
+        synchronized public void __EI(registers reg, int[] opperands) {
             return;
         }
 
-        public void __LD_A_a16(registers reg, int[] opperands) {
+        synchronized public void __LD_A_a16(registers reg, int[] opperands) {
             return;
         }
 
-        public void __RST_38H(registers reg, int[] opperands) {
+        synchronized public void __RST_38H(registers reg, int[] opperands) {
             return;
         }
 
-        public void __CP_d8(registers reg, int[] opperands) {
+        synchronized public void __CP_d8(registers reg, int[] opperands) {
             return;
         }
 
-        public void __RRCA(registers reg, int[] opperands) {
+        synchronized public void __RRCA(registers reg, int[] opperands) {
             return;
         }
 
-        public void __RRA(registers reg, int[] opperands) {
+        synchronized public void __RRA(registers reg, int[] opperands) {
             return;
         }
 
-        public void __RLA(registers reg, int[] opperands) {
+        synchronized public void __RLA(registers reg, int[] opperands) {
             return;
         }
 
-        public void __CPL(registers reg, int[] opperands) {
+        synchronized public void __CPL(registers reg, int[] opperands) {
             return;
         }
 
-        public void __CCF(registers reg, int[] opperands) {
+        synchronized public void __CCF(registers reg, int[] opperands) {
             return;
         }
+
     }
 
 }

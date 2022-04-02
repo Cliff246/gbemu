@@ -1,11 +1,14 @@
 package emulator_core;
 
+import org.javatuples.Pair;
+
 public class gb_bus extends gb_components{
 
 
     
 
-        
+    private Integer taddress;
+    private int[] tdata;
 
     public void insert_gb_cart(gb_cartridge gb_cartridge) {
         cartridge = null;
@@ -22,7 +25,8 @@ public class gb_bus extends gb_components{
             address = gb_bitfunctions.chk_word(address);
             gb_execeptions.gb_putlog("address at (over/under)flowed: original = %d, new = %d", copy, address);
         }
-
+        taddress = address;
+        tdata = data;
         if (version == gb_handle.GAMEBOY_TYPE.GBC) {
 
         } else {
@@ -55,8 +59,13 @@ public class gb_bus extends gb_components{
 
     }
 
-    public void bus_recieve(int[] data) {
-        cpu.gb_snoopbus(data);
+    public int[] bus_recieve() {
+        int[] ret = new int[tdata.length + 1];
+        ret[0] = taddress;
+        for (int i = 1, n = 0; i < ret.length; i++, n++) {
+            ret[n] = tdata[i];
+        }
+        return tdata;
     }
 
     public void sendto_cart(int[] data, int address) {

@@ -18,12 +18,14 @@ public class gb_handle {
     public static final int __gb_hzclock__ = 1050000,
             __gbc_hzclock__ = 1050000 * 2;
 
-    public Thread thread = null;
-    public gb_bus gbbus;
-    public gb_cpu gbcpu;
-    public String name;
     public GAMEBOY_TYPE gbtype;
     public HANDLE_TYPE handletype;
 
-    
+ 
+    public gb_handle()
+    {
+
+
+
+    }
 }

@@ -26,7 +26,10 @@ public class cpu_test {
 
     @Test public void cpu_instructiontest() throws Exception
     {
-   
+        
+
+
+        
     }
 
 }
