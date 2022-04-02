@@ -1,14 +1,10 @@
 package emulator_core;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.TimerTask;
 import java.util.Vector;
-import java.util.function.Function;
 
 import org.javatuples.Pair;
 
-public class gb_cpu extends Thread {
+public class gb_cpu extends gb_components{
 
     public static enum REGISTER {
         Accumulator, Flag,
@@ -185,39 +181,39 @@ public class gb_cpu extends Thread {
                     break;
                 }
                 case StackPointer: {
-                    Integer[] hilo = get_16bit(value).get_data_list();
-                    spHI = hilo[__word16_hi__];
-                    spLO = hilo[__word16_lo__];
+                    Pair<Integer, Integer> hilo = get_16bit(value);
+                    spHI = hilo.getValue1();
+                    spLO = hilo.getValue0();
                     break;
                 }
                 case ProgramCounter: {
-                    Integer[] hilo = get_16bit(value).get_data_list();
-                    pcHI = hilo[__word16_hi__];
-                    pcLO = hilo[__word16_lo__];
+                    Pair<Integer, Integer> hilo = get_16bit(value);
+                    pcHI = hilo.getValue1();
+                    pcLO =  hilo.getValue0();
                     break;
                 }
                 case RegisterAF: {
-                    Integer[] hilo = get_16bit(value).get_data_list();
-                    rA = hilo[__word16_hi__];
-                    rF = hilo[__word16_lo__];
+                    Pair<Integer, Integer> hilo = get_16bit(value);
+                    rA = hilo.getValue1();
+                    rF = hilo.getValue0();
                     break;
                 }
                 case RegisterBC: {
-                    Integer[] hilo = get_16bit(value).get_data_list();
-                    rB = hilo[__word16_hi__];
-                    rC = hilo[__word16_lo__];
+                    Pair<Integer, Integer> hilo = get_16bit(value);
+                    rB = hilo.getValue1();
+                    rC = hilo.getValue0();
                     break;
                 }
                 case RegisterDE: {
-                    Integer[] hilo = get_16bit(value).get_data_list();
-                    rD = hilo[__word16_hi__];
-                    rE = hilo[__word16_lo__];
+                    Pair<Integer, Integer> hilo = get_16bit(value);
+                    rD = hilo.getValue1();
+                    rE =  hilo.getValue0();
                     break;
                 }
                 case RegisterHL: {
-                    Integer[] hilo = get_16bit(value).get_data_list();
-                    rH = hilo[__word16_hi__];
-                    rL = hilo[__word16_lo__];
+                    Pair<Integer, Integer> hilo = get_16bit(value);
+                    rH = hilo.getValue1();
+                    rL =  hilo.getValue0();
                     break;
                 }
                 default:
@@ -2340,18 +2336,18 @@ public class gb_cpu extends Thread {
     private gb_handle handle;
     private gb_handle.GAMEBOY_TYPE type;
     private registers cpureg;
-    private Thread thread;
 
-    private vertex<Integer> get_16bit(int get) {
+
+    private Pair<Integer, Integer> get_16bit(int get) {
         if (get < gb_bitfunctions.__u_word_min__ && get >= gb_bitfunctions.__u_word_max__)
             get &= 0xffff;
         int hi = get & 0x00ff, lo = get & 0xff;
-        return new vertex<Integer>(hi, lo);
+        return new Pair<Integer,Integer>(lo, hi);
     }
 
-    private int set_16bit(vertex<Integer> set) {
-        Integer[] hilo = set.get_data_list();
-        int hi = hilo[__word16_hi__], lo = hilo[__word16_lo__];
+    private int set_16bit(Pair<Integer,Integer> set) {
+        int lo = set.getValue0();
+        int hi = set.getValue1();
         if ((hi < gb_bitfunctions.__u_byte_min__ && hi >= gb_bitfunctions.__u_byte_max__)
                 || (lo >= gb_bitfunctions.__u_byte_min__ && lo < gb_bitfunctions.__u_byte_max__)) {
             hi &= 0x00ff;
@@ -2361,18 +2357,14 @@ public class gb_cpu extends Thread {
         return result + lo;
     }
 
-    private gb_applog applog;
     private final int flaglen = 2;
     private boolean debug, definedinstructions;
     private op_functions functions = new op_functions();
 
-    public gb_cpu(Thread _thread, gb_handle _handle, gb_bus _gbbus, gb_applog _applog, boolean[] flags) {
+    public gb_cpu(gb_bus _gbbus, boolean[] flags) {
 
-        thread = _thread;
-        handle = _handle;
         bus = _gbbus;
         type = handle.gbtype;
-        applog = _applog;
         if (flags == null || flags.length != flaglen) {
             debug = false;
             definedinstructions = false;
@@ -2388,23 +2380,16 @@ public class gb_cpu extends Thread {
     public final int __word16_lo__ = 1;
     public final int __ppu_address_max__ = 0xfff, __ppu_address_min__ = 0;
 
-    public void snoopbus(int[] data) {
+    public void gb_snoopbus(int[] data) {
         opperands = data;
     }
 
     public boolean update = true;
-    public TimerTask scheduler;
     public long duration;
     public Vector<Pair<Integer,Integer>> opcodelist;
     int[] opperands = null;
 
-    public void start() {
-        if (debug == true)
-            applog = new gb_applog("cpu debug");
-        run();
-    }
-
-    public void run() {
+    public void gb_cpurun() {
         int count = 0;
         duration = (handle.gbtype == gb_handle.GAMEBOY_TYPE.GBC) ? gb_handle.__gbc_hzclock__ / 60
                 : gb_handle.__gb_hzclock__ / 60;
@@ -2417,7 +2402,7 @@ public class gb_cpu extends Thread {
                 opcode = temp.getValue1();
 
             } else if (definedinstructions == false) {
-
+                
             }
             instruction instruction = operations[prefix][opcode];
 
@@ -2560,7 +2545,7 @@ public class gb_cpu extends Thread {
 
         private void onecycle() {
             try {
-                sleep(duration);
+                Thread.sleep(duration);
             } catch (InterruptedException e) {
                 gb_execeptions.gb_exception(e.getMessage());
             }

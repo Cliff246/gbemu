@@ -2,35 +2,31 @@ package emulator_core;
 
 import java.security.InvalidParameterException;
 
+import org.javatuples.Pair;
 import org.w3c.dom.ranges.RangeException;
 
-public class gb_memory extends Thread {
+public class gb_memory extends gb_components {
 
-    public final int __mem_range_start__ = 0;
-    public final int __mem_range_end__ = 1;
     private gb_bus gbbus;
-    private gb_handle handle;
     private int dmemlength;
-    private Thread thread;
-    private vertex<Integer> memrange;
+
+    private Pair<Integer, Integer> memrange;
     private byte[] memory;
 
     private int get_memstart() {
-        return memrange.get_at(__mem_range_start__);
+        return memrange.getValue0();
     }
 
     private int get_memend() {
-        return memrange.get_at(__mem_range_end__);
+        return memrange.getValue1();
     }
 
-    public gb_memory(Thread _thread, gb_handle _handle, gb_bus _gbbus, vertex<Integer> _memrange) {
-        thread = _thread;
-        handle = _handle;
-        gbbus = _gbbus;
+    public gb_memory(Pair<Integer, Integer> _memrange) {
+
         memrange = _memrange;
 
-        int start = memrange.get_at(__mem_range_start__);
-        int end = memrange.get_at(__mem_range_end__);
+        int start = memrange.getValue0();
+        int end = memrange.getValue1();
         dmemlength = start - end;
         memory = new byte[dmemlength];
 

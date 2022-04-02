@@ -25,4 +25,9 @@ public class gb_execeptions {
         return applog.pop_log();
     }
 
+    public static void gb_printlogs()
+    {
+        while (applog.chk_log() == true)
+            System.err.println(applog.pop_log());
+    }
 }

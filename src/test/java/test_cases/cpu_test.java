@@ -1,6 +1,8 @@
 package test_cases;
 import emulator_core.*;
 
+import static org.junit.Assert.assertFalse;
+
 import java.util.Vector;
 
 import org.javatuples.Pair;
@@ -11,41 +13,20 @@ public class cpu_test {
     
     @Test public void cpu_inittest()
     {
-        boolean[]flags = new boolean[]{true,true};
-        gb_handle handle = new gb_handle(gb_handle.HANDLE_TYPE.DEBUG);
-        gb_bus bus = new gb_bus("cputest", handle,flags);
-        gb_cpu cpu = bus.gbcpu;
+       
     
     }
 
     @Test public void cpu_speedtest()
     {
-        boolean[]flags = new boolean[]{true,true};
-        gb_handle handle = new gb_handle(gb_handle.HANDLE_TYPE.DEBUG);
-        gb_bus bus = new gb_bus("cputest", handle,flags);
-        
+    
 
         
     }
 
     @Test public void cpu_instructiontest() throws Exception
     {
-        boolean[]flags = new boolean[]{true,true};
-        gb_handle handle = new gb_handle(gb_handle.HANDLE_TYPE.DEBUG);
-        handle.create_bus_thread("test",flags);
-        gb_bus bus = handle.gbbus;
-        bus.start();
-        gb_cpu cpu = bus.gbcpu;
-        
-        Vector<Pair<Integer, Integer>>opcodelist = new Vector<Pair<Integer,Integer>>(0x20);
-        for(int i = 0; i < opcodelist.size();i++)
-        {
-            Pair<Integer, Integer> temp = new Pair<Integer,Integer>(0, i);
-            opcodelist.addElement(temp);
-        }
-        cpu.opcodelist = opcodelist;
-        
-
+   
     }
 
 }
