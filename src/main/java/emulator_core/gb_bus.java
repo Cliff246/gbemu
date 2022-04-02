@@ -1,11 +1,6 @@
 package emulator_core;
 
-import org.javatuples.Pair;
-
-public class gb_bus extends gb_components{
-
-
-    
+public class gb_bus extends gb_components {
 
     private Integer taddress;
     private int[] tdata;
@@ -54,9 +49,7 @@ public class gb_bus extends gb_components{
                 sendto_mem(data, address);
             else if (address >= 0xff80 && address < 0xffff)
                 sendto_mem(data, address);
-
         }
-
     }
 
     public int[] bus_recieve() {

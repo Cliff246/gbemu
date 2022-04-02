@@ -1312,6 +1312,9 @@ public class gb_cpu extends gb_components {
 
                         break;
                     }
+                    case 0xff:{
+
+                    }
                     default: {
                         gb_execeptions.gb_exception("0x%x notdefined", opcode);
                         break;
@@ -2340,6 +2343,9 @@ public class gb_cpu extends gb_components {
 
                         break;
                     }
+                    case 0xff:{
+                        break;
+                    }
                     default: {
                         gb_execeptions.gb_exception("0x%x notdefined", opcode);
                         break;
@@ -2350,7 +2356,6 @@ public class gb_cpu extends gb_components {
         }
 
     }
-    private registers cpureg;
 
     private Pair<Integer, Integer> get_16bit(int get) {
         if (get < gb_bitfunctions.__u_word_min__ && get >= gb_bitfunctions.__u_word_max__)
@@ -2371,6 +2376,10 @@ public class gb_cpu extends gb_components {
         return result + lo;
     }
 
+
+    
+
+    public registers cpureg;
     private final int flaglen = 2;
     private boolean debug, definedinstructions;
     private op_functions functions;
@@ -2577,7 +2586,7 @@ public class gb_cpu extends gb_components {
             String[] regStrings = cpureg.get_register_strings();
             duration = (version == gb_handle.GAMEBOY_TYPE.GBC) ? gb_handle.__gbc_hzclock__ / 1000
                     : gb_handle.__gb_hzclock__ / 1000;
-                    
+
             while (update == true) {
                 int opcode = 0, prefix = 0;
 
